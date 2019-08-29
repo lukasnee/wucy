@@ -5,8 +5,8 @@
   **Computer**  
   **Yeah..!**  
 
-### Idea (wucy's sacred text)
-
+### Idea 
+_...wucy's sacred text..._
 `It is not a watch.`  
   
 `It's a computer on your wrist.`  
