@@ -2,7 +2,7 @@
 **Wearable**  
 **Unlimited** (open source general-purpose)  
 **Computer**  
-**(Yeah..!)**  
+**Yeah..!**  
 
 based on ESP32-PICO-D4 running FreeRTOS on my custom Therram kernel. 
 
