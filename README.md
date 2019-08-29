@@ -16,7 +16,7 @@ Nor it's a smartwatch.
 I dislike the "smart" part in tech.
 It's stupid.
 
-# ## Vision
+### Vision
 
 My vision is to create hardware & software platform and spark a community of hackers around it :). I encourage you to help me build a community around this project for nerds like you and me (it' a compliment!). I'm not sure how this github thing works, I'm an amateur hacker so DM me if you think you can help me kickstart this project, although I'm quite happy working alone in current progress stage.
 
