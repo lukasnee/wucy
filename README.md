@@ -9,16 +9,16 @@
 
 `It is not a watch.`  
   
-It's a computer on your wrist.  
-It'll not make your life easier. 
-It's explicitly 4 fun.   
+`It's a computer on your wrist.`  
+`It'll not make your life easier.` 
+`It's explicitly 4 fun.`   
   
-Nor it's a smartwatch.  
+`Nor it's a smartwatch.`  
 
-"Smart"? 
-You better be afraid of this devilish word.
-It's as dumb as any other computer. 
-That's why they're so lovable !
+`"Smart"?` 
+`You better be afraid of this devilish word.`
+`It's as dumb as any other computer.` 
+`That's why they're so lovable !`
 
 ### Vision
 
