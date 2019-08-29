@@ -19,7 +19,7 @@ _...wucy's sacred text..._
 `"Smart"?`  
 `You better be afraid of this devilish word.`  
 `It's as dumb as any other computer.`  
-`That's why they're so lovable !`  
+`That's why computers are so lovable !`  
   
 ### Vision
 
