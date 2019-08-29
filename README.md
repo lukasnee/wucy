@@ -5,22 +5,24 @@
   **Computer**  
   **Yeah..!**  
 
-### Idea
+### Idea (wucy's sacred text)
 
-It's not a watch.  
+It is not a watch.  
+  
 It's a computer on your wrist.  
-It will not make your life easier.  
-It's to have fun.   
+It'll not make your life easier. 
+It's explicitly 4 fun.   
   
 Nor it's a smartwatch.  
-I dislike the "smart" part in tech.  
-It's stupid.  
-  
+
+"Smart"? 
+You better be afraid of this devilish word.
+It's as dumb as any other computer. 
+That's why they're so lovable !
+
 ### Vision
 
-My vision is to create hardware & software platform and spark a community of hackers around it :). I encourage you to help me build a community around this project for nerds like you and me (it' a compliment!). I'm not sure how this github thing works, I'm an amateur hacker so DM me if you think you can help me kickstart this project, although I'm quite happy working alone in current progress stage.
-
-Maybe someone could help me create a bootloader(?) that could enable loading precompiled applications such as a game from storage to RAM and run it within OS.
+My vision is to create hardware & software platform and spark a community of hackers around it :). I encourage you to help me build this community for nerds like you and me (that's a compliment !). I'm still learning how github works, I'm an amateur hacker so DM me if you think you can help me kickstart this project, although I'm quite happy working alone in current progress stage. About the progress - down at the very bottom.
 
 ### Hardware
 
@@ -46,6 +48,10 @@ _Highest priority from top to bottom.
 
 ### Software 
 Custom therram kernel wrapped in FreeRTOS with basic but sexy GUI, easy access to system hardware IO, external file storage etc. It has to run low power and be flexible - save power as much as possible while not doing anything but leave it flexible for burst of speed. Will try to make dynamic clock speed. Advanced control on CPU cores.  Another key factor is to make an API framework for easy application developement. All code in C, no Arduino or simmilar frameworks, I want this wearable to be fast, open and sexy. 
+
+### Progress
+
+Maybe someone could help me create a bootloader(?) that could enable loading precompiled applications such as a game from storage to RAM and run it within OS.
 
 ### License
 All of my contribution will be under Open Hardware and Open Software licenses (not sure which, never done this, lol). To be safe, I will not release any significant source files until I work that out. I would like some help and suggestions for this cause.
