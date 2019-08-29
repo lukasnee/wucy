@@ -1,7 +1,7 @@
 # W.U.C.Y.  
 
   **Wearable**  
-  **Unlimited** (open source general-purpose)  
+  **Unlimited** (open source, general-purpose)  
   **Computer**  
   **Yeah..!**  
 
