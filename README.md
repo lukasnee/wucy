@@ -1,8 +1,8 @@
 # W.U.C.Y.
-### **Wearable**  
-### **Unlimited** (open source general-purpose)  
-### **Computer**  
-### **Yeah..!**  
+  **Wearable**  
+  **Unlimited** (open source general-purpose)  
+  **Computer**  
+  **Yeah..!**  
 
 based on ESP32-PICO-D4 running FreeRTOS on my custom therram kernel. 
 
