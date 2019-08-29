@@ -10,7 +10,7 @@
 `It is not a watch.`  
   
 `It's a computer on your wrist.`  
-`It'll not make your life easier.` 
+`It'll not make your life easier.`  
 `It's explicitly 4 fun.`   
   
 `Nor it's a smartwatch.`  
