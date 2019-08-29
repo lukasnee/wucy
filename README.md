@@ -7,7 +7,7 @@
 
 ### Idea (wucy's sacred text)
 
-It is not a watch.  
+`It is not a watch.  
   
 It's a computer on your wrist.  
 It'll not make your life easier. 
@@ -19,7 +19,7 @@ Nor it's a smartwatch.
 You better be afraid of this devilish word.
 It's as dumb as any other computer. 
 That's why they're so lovable !
-
+`
 ### Vision
 
 My vision is to create hardware & software platform and spark a community of hackers around it :). I encourage you to help me build this community for nerds like you and me (that's a compliment !). I'm still learning how github works, I'm an amateur hacker so DM me if you think you can help me kickstart this project, although I'm quite happy working alone in current progress stage. About the progress - down at the very bottom.
