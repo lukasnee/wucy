@@ -8,7 +8,7 @@
 ### Idea
 
 It's not a watch.  
-It's a Computer on your wrist.  
+It's a computer on your wrist.  
 It will not make your life easier.  
 It's to have fun.   
   
