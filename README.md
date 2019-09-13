@@ -9,7 +9,7 @@
 `Philosophically - not.`  
 
 `It's a neat & simple computer on your wrist.`  
-`Explicitly for fun.`   
+`For hackers. For fun.`   
 
 ### Vision
 
