@@ -8,8 +8,7 @@
 `Technically a watch,`  
 `Philosophically - not.`  
 
-`It's a simple computer on your wrist.`  
-`Open - top to bottom.`
+`It's a neat & simple computer on your wrist.`  
 `Explicitly for fun.`   
 
 ### Vision
