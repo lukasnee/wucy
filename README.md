@@ -13,9 +13,9 @@
 
 ### Vision
 
-My vision is to create hardware & software platform and spark a community of hackers around it. I encourage you to help me build a community of nerds like you and me (that's a compliment !). If there will be a demand, I might consider making wucy's DIY kits or prebuild hardware making them plug&play, however that sounds like a devastating labour by hand... Well, thats a problem for future, if there will ever be one, lol.
+My vision is to create hardware & software platform and spark a community of hackers around it. I encourage you to join. If there will be a demand, I might consider making wucy's DIY kits or prebuild hardware making them plug&play, however that sounds like a devastating labour by hand... Thats a problem for future, if there will ever be one, lol.
 
-I'm still learning how github works, I'm an amateur hacker, DM me if you think you can help me kickstart this project, although I'm quite happy working alone in current progress stage. Down at the very bottom about the progress.
+I'm still learning how github works, I'm an amateur hacker, DM me if you think you can help me kickstart this project, although I'm quite happy working alone in current progress stage. About the progress down at the very bottom.
 
 ### Hardware
 
@@ -38,14 +38,16 @@ _Highest priority from top to bottom.
 * ??? Vibration - tiny motor (maybe on rev.2 if power consumption will be efficient).
 
 ### Software 
-Custom therram kernel wrapped in FreeRTOS with basic but sexy GUI, easy access to system hardware IO, external file storage etc. It has to run low power and be flexible - save power as much as possible while not doing anything but leave it flexible for burst of speed. Will try to make dynamic clock speed. Advanced control on CPU cores.  Another key factor is to make an API framework for easy application developement. All code in C, no Arduino or simmilar frameworks, I want this wearable to be fast, open and sexy. 
+Custom therram kernel wrapped in FreeRTOS with neat GUI, easy access to system hardware IO, external file storage etc. I want a great flexibility on leveraging power usage and computational performace. Another key factor is to make an API framework for easy application developement within the kernel and most inportantly on top of the system. All code in C, no Arduino or simmilar frameworks, I want this wearable to be fast and sexy. 
 
 ### Progress
-
-Maybe someone could help me create a bootloader(?) that could enable loading precompiled applications such as a game from storage to RAM and run it within OS.
+Maybe someone could help me create a bootloader that could enable loading precompiled applications such as a game from sd card storage to RAM and run it within OS.
 
 ### License
 All of my contribution will be under open hardware and open software licenses. I'm very new to licensing so I'll put the most permissive and popular MIT license for software for now. Hardware licensing will come into consideration later.
+
+Take everything with a grain of salt, I'm amateur to such sophisticated project's. 
+Luckily I have a vision and I'm open for guidance. Let's do it.
 
 [More info in wiki](https://github.com/therram/thera/wiki).
   
