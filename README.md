@@ -5,7 +5,7 @@
   **Computer**  
   **Yeah..!**  
 
-`Technically a watch,`
+`Technically a watch,`  
 `Philosophically - not.`  
 
 `It's a simple computer on your wrist.`  
