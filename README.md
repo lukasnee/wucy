@@ -9,7 +9,7 @@
 `Philosophically - not.`  
 
 `It's a simple computer on your wrist.`  
-`Open top to bottom.`
+`Open - top to bottom.`
 `Explicitly for fun.`   
 
 ### Vision
