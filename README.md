@@ -5,10 +5,11 @@
   **Computer**  
   **Yeah..!**  
 
+`For hackers. For fun.`  
+
 `Technically a watch,`  
 `Philosophically - neat computer on your wrist.`  
-`For hackers. For fun.`   
-
+ 
 ### Vision
 
 My vision is to create hardware & software platform and spark a community of hackers around it. I encourage you to join. If there will be a demand, I might consider making wucy's DIY kits or prebuild hardware making them plug&play, however that sounds like a devastating labour by hand... Thats a problem for future, if there will ever be one, lol.
