@@ -6,9 +6,7 @@
   **Yeah..!**  
 
 `Technically a watch,`  
-`Philosophically - not.`  
-
-`It's a neat & simple computer on your wrist.`  
+`Philosophically - neat computer on your wrist.`  
 `For hackers. For fun.`   
 
 ### Vision
