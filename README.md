@@ -43,7 +43,7 @@ Custom therram kernel wrapped in FreeRTOS with neat GUI, easy access to system h
 Maybe someone could help me create a bootloader that could enable loading precompiled applications such as a game from sd card storage to RAM and run it within OS.
 
 ### License
-All of my contribution will be under open hardware and open software licenses. I'm very new to licensing so I'll put the most permissive and popular MIT license for software for now. Hardware licensing will come into consideration later.
+All of my contribution will be under open hardware and open software licenses. I'm very new to licensing and I want this project to be purely open-source so I decided to license under GPL-3.0 at least for now. Hardware licensing will come into consideration later, currently I don't have any decent documentation to publish.
 
 Take everything with a grain of salt, I'm amateur to such sophisticated project's. 
 Luckily I have a vision and I'm open for guidance. Let's do it.
