@@ -25,7 +25,7 @@
 */
 
 #include "ssd1351.h"
-#include "hal.h"
+#include "api.h"
 
 /* ================================================================================ */
 /* |				SSD1351 User Hardware Abstraction Layer (HAL)				  |	*/
@@ -293,41 +293,9 @@ inline void ssd1351_PixelColorSet(window_t window, pxl_pos_t x, pxl_pos_t y, c_h
 
 void ssd1351_SendBackground(ssd1351_t * display){
 
-	 ssd1351_SendData2Display(display, 0, 0, SSD1351_RANGE_W, SSD1351_RANGE_H, (uint8_t *)(display->Frame.VRAM));
+	 ssd1351_SendData2Display(display, 0, 0, SSD1351_RANGE_W, SSD1351_RANGE_H, (uint8_t *)(display->MainFrame.VRAM));
 }
 
 
-void fill_block_bg(ssd1351_t * display, c_hex_t color, pxl_pos_t x, pxl_pos_t y, pxl_pos_t w, pxl_pos_t h) {
-
-	pixel_vram_t pxl_data = 0;
-
-	int16_t xt = 0, yt = 0, dx = 0, dy = 0;
-
-	if(x <= SSD1351_RANGE_W && y <= SSD1351_RANGE_H){
-
-		pxl_data = color_hex2PixelVRAM(color);
-
-		if(w < 0) xt = x + w;
-		else xt = x;
-
-		if(h < 0) yt = y + h;
-		else yt = y;
-
-		dx = xt + abs(w);
-		if(dx > SSD1351_RANGE_W) dx = SSD1351_RANGE_W;
-
-		dy = yt + abs(h);
-		if(dy > SSD1351_RANGE_H) dy = SSD1351_RANGE_H;
-	}
-
-	for(uint16_t yc = yt; yc <= dy; yc++) {
-
-		for(uint16_t xc = xt; xc <= dx; xc++) {
-
-			ssd1351_PixelDataSet(display->Frame, xc, yc, pxl_data);
-
-		}
-	}
-}
 
 /* todo createWindow fcn (malloc with MALLOC_SIMPLE) */

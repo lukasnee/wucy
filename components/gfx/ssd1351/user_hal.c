@@ -26,7 +26,7 @@
 
 
 #include "ssd1351.h"
-#include "hal.h"
+#include "api.h"
 /* USER PRIVATE INCLUDES START */
 
 #include "freertos/FreeRTOS.h"

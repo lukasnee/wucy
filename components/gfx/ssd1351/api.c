@@ -24,7 +24,7 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "hal.h"
+#include "api.h"
 #include "ssd1351.h"
 
 /* USER PRIVATE INCLUDES START */
@@ -107,12 +107,12 @@ inline void HAL_Init(ssd1351_t * disp) {
 		break;
 	}
 
-	disp->Frame.VRAM = HAL_FrameBufferMalloc(MALLOC_SPECIALIZED_DMA);
-	disp->Frame.x = 0;
-	disp->Frame.y = 0;
-	disp->Frame.w = SSD1351_WIDTH;
-	disp->Frame.h = SSD1351_HEIGHT;
-	disp->Frame.layer = 0;
+	disp->MainFrame.VRAM = HAL_FrameBufferMalloc(MALLOC_SPECIALIZED_DMA);
+	disp->MainFrame.x = 0;
+	disp->MainFrame.y = 0;
+	disp->MainFrame.w = SSD1351_WIDTH;
+	disp->MainFrame.h = SSD1351_HEIGHT;
+	disp->MainFrame.layer = 0;
 }
 
 

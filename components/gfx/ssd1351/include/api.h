@@ -1,5 +1,5 @@
 /*
- * hal.h
+ * api.h
  *
  *  Created on: 2019-09-18
  *      Author: lukas.neverauskis
@@ -25,8 +25,8 @@
 */
 
 
-#ifndef COMPONENTS_SSD1351_INCLUDE_HAL_H_
-#define COMPONENTS_SSD1351_INCLUDE_HAL_H_
+#ifndef COMPONENTS_SSD1351_INCLUDE_API_H_
+#define COMPONENTS_SSD1351_INCLUDE_API_H_
 
 #include "ssd1351.h"
 
@@ -62,4 +62,4 @@ extern void HAL_Transmit(ssd1351_t * disp, dc_e dc, uint8_t * data, uint32_t siz
 
 
 
-#endif /* COMPONENTS_SSD1351_INCLUDE_HAL_H_ */
+#endif /* COMPONENTS_SSD1351_INCLUDE_API_H_ */

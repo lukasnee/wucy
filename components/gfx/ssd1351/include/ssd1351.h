@@ -176,7 +176,7 @@ typedef struct{
 
 	interface_t 				Pin;
 	ssd1351_status_t 			Status;
-	window_t 					Frame; /* background image (full vram frame buffer) */
+	window_t 					MainFrame; /* background image (full vram frame buffer) */
 
 
 }ssd1351_t;
@@ -521,7 +521,4 @@ void ssd1351_PixelDataSet(window_t window, pxl_pos_t x, pxl_pos_t y, pixel_vram_
 pixel_vram_t ssd1351_PixelDataGet(window_t window, pxl_pos_t x, pxl_pos_t y);
 
 void ssd1351_SendBackground(ssd1351_t * display);
-
-void fill_block_bg(ssd1351_t * display, c_hex_t color, pxl_pos_t x, pxl_pos_t y, pxl_pos_t w, pxl_pos_t h);
-#endif /* COMPONENTS_SSD1351_FAST_H_ */
 
