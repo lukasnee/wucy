@@ -6,7 +6,7 @@
  */
 
 /*
-	ssd1351 - software driver for ssd1351 display driver.
+	ssd1351 - software driver for ssd1351 type display.
 	Portable, although designed for project WUCY. <https://github.com/therram/wucy>
 	Copyright (C) 2019 Lukas Neverauskis
 
@@ -215,6 +215,7 @@ typedef struct{
 
 }gfx_geo_t;
 
+
 typedef struct{
 
 	gfx_geo_t geo; /* geometry */
@@ -222,16 +223,39 @@ typedef struct{
 	uint8_t layer; /* frame priority: drawn behind higher priority frames
 	and in front of lower priority frames */
 
-	pixel_vram_t * VRAM;	/* background buffer */
+	pixel_vram_t * PPVRAM;
 
 }window_t;
 
+typedef struct{
+
+	pixel_vram_t * Ping;	/* background buffer 1 */
+	pixel_vram_t * Pong;	/* background buffer 2 */
+
+	enum{ PING_DRAW_PONG_SEND,
+		PING_SEND_PONG_DRAW} State:1;
+
+}pingpong_vram_t;
+
+#define VRAM_DRAW (!disp->Mainframe.PPVRAM.State ? disp->Mainframe.PPVRAM.Pong : disp->Mainframe.PPVRAM.Ping)
+#define VRAM_SEND ( disp->Mainframe.PPVRAM.State ? disp->Mainframe.PPVRAM.Pong : disp->Mainframe.PPVRAM.Ping)
+
+typedef struct{
+
+	gfx_geo_t geo; /* geometry */
+
+	uint8_t layer; /* frame priority: drawn behind higher priority frames
+	and in front of lower priority frames */
+
+	pingpong_vram_t PPVRAM;
+
+}mainframe_t;
 
 typedef struct{
 
 	interface_t 				Pin;
 	ssd1351_status_t 			Status;
-	window_t 	 				MainFrame; /* background image (full vram frame buffer) */
+	mainframe_t 	 			Mainframe; /* background image (full vram frame buffer) */
 
 }ssd1351_t;
 
@@ -240,8 +264,8 @@ typedef struct{
 /* ================================================================================ */
 
 
-void ssd1351_display_Update(ssd1351_t * disp, uint8_t * data, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2);
-void ssd1351_display_UpdateAll(ssd1351_t * display);
+void ssd1351_display_SendData(ssd1351_t * disp, uint8_t * data, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2);
+void ssd1351_UpdateAll(ssd1351_t * display);
 
 
 int8_t ssd1351_Init_via_SPI(ssd1351_t * display, ssd1351_spi_t * interface);
@@ -257,9 +281,14 @@ pixel_vram_t ssd1351_color_rgba2PixelVRAM(rgba_t rgba);
 
 pixel_vram_t ssd1351_color_hex2PixelVRAM(c_hex_t color_hex);
 
-void ssd1351_PixelDataSet(window_t * window, gfx_pos_t x, gfx_pos_t y, pixel_vram_t data);
-pixel_vram_t ssd1351_PixelDataGet(window_t * window, gfx_pos_t x, gfx_pos_t y);
+void ssd1351_SetAll(ssd1351_t * disp);
+void ssd1351_ClearAll(ssd1351_t * disp);
 
+void ssd1351_mainframe_PixelSet(ssd1351_t * disp, gfx_pos_t x, gfx_pos_t y, pixel_vram_t data);
+pixel_vram_t ssd1351_mainframe_PixelGet(ssd1351_t * disp, gfx_pos_t x, gfx_pos_t y);
+
+void ssd1351_PixelDataSet(window_t * wnd, gfx_pos_t x, gfx_pos_t y, pixel_vram_t data);
+pixel_vram_t ssd1351_PixelDataGet(window_t * wnd, gfx_pos_t x, gfx_pos_t y);
 
 
 #endif /* COMPONENTS_SSD1351_FAST_H_ */

@@ -107,12 +107,13 @@ inline void HAL_Init(ssd1351_t * disp) {
 		break;
 	}
 
-	disp->MainFrame.VRAM = HAL_FrameBufferMalloc(MALLOC_SPECIALIZED_DMA);
-	disp->MainFrame.geo.x = 0;
-	disp->MainFrame.geo.y = 0;
-	disp->MainFrame.geo.w = SSD1351_WIDTH;
-	disp->MainFrame.geo.h = SSD1351_HEIGHT;
-	disp->MainFrame.layer = 0; /* background */
+	disp->Mainframe.PPVRAM.Ping = HAL_FrameBufferMalloc(MALLOC_SPECIALIZED_DMA);
+	disp->Mainframe.PPVRAM.Pong = HAL_FrameBufferMalloc(MALLOC_SPECIALIZED_DMA);
+	disp->Mainframe.geo.x = 0;
+	disp->Mainframe.geo.y = 0;
+	disp->Mainframe.geo.w = SSD1351_WIDTH;
+	disp->Mainframe.geo.h = SSD1351_HEIGHT;
+	disp->Mainframe.layer = 0; /* background */
 }
 
 

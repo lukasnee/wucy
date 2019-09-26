@@ -100,7 +100,6 @@ static gfx_geo_t gfx_AdjustRectRef(gfx_ref_e ref, gfx_pos_t x, gfx_pos_t y, gfx_
 
 
 
-
 /* INTENDED FOR SINGLE PIXEL COLORING, INEFFICIENT IF USED TO DRAW GRAPHICS WITH SOLID COLOR.
  * In this case to be efficient make a temporary pixel_vram_t variable and declare it with
  * color_hex2PixelVRAM(color_hex) to prepare formatted VRAM data,
@@ -135,9 +134,9 @@ void gfx_draw_Box(window_t * wnd, c_hex_t color, gfx_ref_e ref, gfx_pos_t x, gfx
 
 	gfx_geo_t geo = gfx_AdjustRectRef(ref, x, y, w, h);
 
-	for(gfx_pos_t y = geo.y; y < geo.y + geo.h + 1; y++) {
+	for(gfx_pos_t y = geo.y; y < geo.y + geo.h; y++) {
 
-		for(uint16_t x = geo.x; x <= geo.x + geo.w + 1; x++) {
+		for(uint16_t x = geo.x; x < geo.x + geo.w; x++) {
 
 			ssd1351_PixelDataSet(wnd, x, y, pxl_data);
 

@@ -65,14 +65,14 @@ void tos_draw_screen(void *p){
 	while(1){
 
 		if(!drawnFlag){
-			gpio_set_level(26, 1);
+gpio_set_level(26, 1);
 
-			ssd1351_display_UpdateAll(&disp);
-			drawnFlag = 1;
-			gpio_set_level(26, 0);
+			ssd1351_UpdateAll(&disp);
+
+gpio_set_level(26, 0);
 		}
+		vTaskDelay(1);
 	}
-
 }
 float i = 0.0;
 
@@ -92,31 +92,41 @@ void rotation(void * p){
 
 void test_fill(void *p){
 
+	uint8_t prevState = 0;
+
+	window_t window;
+	window.geo = disp.Mainframe.geo;
+	window.layer = disp.Mainframe.layer;
 
 
- 	 while(1){
- 		 if(drawnFlag){
+	while(1){
 
- 			gpio_set_level(25, 1);
-			gfx_draw_Box(&disp.MainFrame, REF_BOTTOM_L, 0x000000, 0, 0, 127, 127);
+		window.PPVRAM = (!disp.Mainframe.PPVRAM.State ? disp.Mainframe.PPVRAM.Pong : disp.Mainframe.PPVRAM.Ping);
 
-			gfx_draw_Box(&disp.MainFrame, REF_BOTTOM_L,  0xFF0000, 0, 0, 10, 10); 			// 	bottom left - RED
-			gfx_draw_Box(&disp.MainFrame, REF_BOTTOM_L,  0x00FF00, 127, 0, -10, 10); 		//	bottom right - GREEN
-			gfx_draw_Box(&disp.MainFrame, REF_BOTTOM_L,  0x0000FF, 0, 127, 10, -10); 		//	top left - BLUE
-			gfx_draw_Box(&disp.MainFrame, REF_BOTTOM_L,  0xFF00FF, 127, 127, -10, -10); 	//	top right - PURPLE
+		if(disp.Mainframe.PPVRAM.State != prevState){
 
-			gfx_draw_Rectangle(&disp.MainFrame, color, REF_CENTER, 64 + cos(i)*32, 64 + sin(i)*32, 64, 64);
+			prevState = disp.Mainframe.PPVRAM.State;
 
-			gfx_draw_Box(&disp.MainFrame, 0xFFFFFF, REF_CENTER, 64 + cos(i)*32, 64 + sin(i)*32, 50, 50);
+gpio_set_level(25, 1);
 
-			drawnFlag = 0;
-			gpio_set_level(25, 0);
-			vTaskDelay(1);
+			ssd1351_ClearAll(&disp);
+			//gfx_draw_Box(&window, 0x000000, REF_BOTTOM_L,  0, 0, 128, 128);
 
- 		 }
- 	 }
+			gfx_draw_Box(&window, 0xFF0000, REF_BOTTOM_L, 	0, 		0, 		10, 10); 		// 	bottom left - RED
+			gfx_draw_Box(&window, 0x00FF00, REF_BOTTOM_R, 	127, 	0, 		10, 10); 		//	bottom right - GREEN
+			gfx_draw_Box(&window, 0x0000FF, REF_TOP_L, 		0, 		127, 	10, 10); 		//	top left - BLUE
+			gfx_draw_Box(&window, 0xFF00FF, REF_TOP_R, 		127, 	127, 	10, 10); 		//	top right - PURPLE
+
+			for(int16_t d = 4; d <= 64; d +=6){
+
+				gfx_draw_Rectangle(&window, color, REF_CENTER, 64 + cos(i)*32, 64 + sin(i)*32, d, d);
+			}
+
+gpio_set_level(25, 0);
+		}
+		vTaskDelay(1);
+	}
 }
-
 
 void app_main(void)
 {

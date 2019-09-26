@@ -6,7 +6,7 @@
  */
 
 /*
-	ssd1351 - software driver for ssd1351 display driver.
+	ssd1351 - software driver for ssd1351 type display.
 	Portable, although designed for project WUCY. <https://github.com/therram/wucy>
 	Copyright (C) 2019 Lukas Neverauskis
 
@@ -107,8 +107,8 @@ static void ssd1351_SendCommand(ssd1351_t * disp, cmd_list_t * command_list) {
 }
 
 #include "driver/gpio.h"
-
-void ssd1351_display_Update(ssd1351_t * disp, uint8_t * data, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2) {
+/*todo consider making data type pxl_vram_t?*/
+void ssd1351_display_SendData(ssd1351_t * disp, uint8_t * data, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2) {
 
 	uint32_t data_size;
 
@@ -125,21 +125,26 @@ void ssd1351_display_Update(ssd1351_t * disp, uint8_t * data, uint8_t x1, uint8_
 
 		ssd1351_SendCommand(disp, pre_vram_dump);
 
-		gpio_set_level(27, 1);
+
 		HAL_Transmit(disp, DC_DATA, data, data_size);
-		gpio_set_level(27, 0);
+
 	}
 }
 
-void ssd1351_display_UpdateAll(ssd1351_t * disp){
+void ssd1351_UpdateAll(ssd1351_t * disp){
 
-	 ssd1351_display_Update(disp,
-			 (uint8_t *)(disp->MainFrame.VRAM),
-			 disp->MainFrame.geo.x,
-			 disp->MainFrame.geo.y,
-			 disp->MainFrame.geo.w - 1,
-			 disp->MainFrame.geo.h - 1
+	disp->Mainframe.PPVRAM.State = !disp->Mainframe.PPVRAM.State;
+	gpio_set_level(27, disp->Mainframe.PPVRAM.State);
+
+	 ssd1351_display_SendData(disp,
+			 (uint8_t *)VRAM_SEND,
+			 disp->Mainframe.geo.x,
+			 disp->Mainframe.geo.y,
+			 disp->Mainframe.geo.w - 1,
+			 disp->Mainframe.geo.h - 1
 			 );
+
+
 }
 
 int8_t ssd1351_Init_via_SPI(ssd1351_t * disp, ssd1351_spi_t * interface) {
@@ -266,19 +271,69 @@ pixel_vram_t ssd1351_color_hex2PixelVRAM(c_hex_t color_hex) {
 
 }
 
-inline void ssd1351_PixelDataSet(window_t * window, gfx_pos_t x, gfx_pos_t y, pixel_vram_t data) {
 
-	if(x >= 0 && y >= 0 && x < window->geo.w && y < window->geo.h) {
 
-		*(window->VRAM + window->geo.w * y + x) = data;
+inline void ssd1351_SetAll(ssd1351_t * disp) {
+
+	memset(VRAM_DRAW, 0xFF, VRAM_SIZE);
+
+}
+
+inline void ssd1351_ClearAll(ssd1351_t * disp) {
+
+	memset(VRAM_DRAW, 0x00, VRAM_SIZE);
+
+}
+
+
+/* todo isnt used doesnt work with windows functions */
+/* for mainframe specific window type */
+inline void ssd1351_mainframe_PixelSet(ssd1351_t * disp, gfx_pos_t x, gfx_pos_t y, pixel_vram_t data) {
+
+	if(x >= 0 && y >= 0 && x < disp->Mainframe.geo.w && y < disp->Mainframe.geo.h) {
+
+		*(VRAM_DRAW + disp->Mainframe.geo.w * y + x) = data;
 
 	}
 }
 
-inline pixel_vram_t ssd1351_PixelDataGet(window_t * window, gfx_pos_t x, gfx_pos_t y) {
 
-	return *(window->VRAM + window->geo.w * y + x);
 
+/* for mainframe specific window type */
+inline pixel_vram_t ssd1351_mainframe_PixelGet(ssd1351_t * disp, gfx_pos_t x, gfx_pos_t y) {
+
+	if(x >= 0 && y >= 0 && x < disp->Mainframe.geo.w && y < disp->Mainframe.geo.h) {
+
+		return *(VRAM_DRAW + disp->Mainframe.geo.w * y + x);
+
+	}
+	return 0;
 }
+
+
+
+/* for general window types */
+inline void ssd1351_PixelDataSet(window_t * wnd, gfx_pos_t x, gfx_pos_t y, pixel_vram_t data) {
+
+	if(x >= 0 && y >= 0 && x < wnd->geo.w && y < wnd->geo.h) {
+
+		*( wnd->PPVRAM + wnd->geo.w * y + x) = data;
+
+	}
+}
+
+
+
+/* for general window types */
+inline pixel_vram_t ssd1351_PixelDataGet(window_t * wnd, gfx_pos_t x, gfx_pos_t y) {
+
+	if(x >= 0 && y >= 0 && x < wnd->geo.w && y < wnd->geo.h) {
+
+	return *( wnd->PPVRAM + wnd->geo.w * y + x);
+
+	}
+	return 0;
+}
+
 
 /* todo createWindow fcn (malloc with MALLOC_SIMPLE) */
