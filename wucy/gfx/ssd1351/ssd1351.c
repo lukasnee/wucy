@@ -57,7 +57,9 @@ uint8_t default_settings[] = {
 	SSD1351_CMD_SET_SECND_PRECHRG_PERIOD, 1, 0x01,
 	SSD1351_CMD_SET_VCOMH_VOLTAGE, 1, 0x05,
 
-	SSD1351_CMD_CONFIG_REG, 1, 0x24,    /* 0x10 flips horziontally (referencing pin text as up)*/ /* 0x20 flips vertical  (referencing pin text as up) */
+	/* 0x10 flips horziontally (referencing pin text as up)*/
+	/* 0x20 flips vertical  (referencing pin text as up) */
+	SSD1351_CMD_CONFIG_REG, 1, 0x24,
 
 	SSD1351_CMD_DISPLAY_NORMAL, 0,
 
@@ -108,11 +110,13 @@ static void ssd1351_SendCommand(ssd1351_t * disp, cmd_list_t * command_list) {
 
 #include "driver/gpio.h"
 /*todo consider making data type pxl_vram_t?*/
-void ssd1351_display_SendData(ssd1351_t * disp, uint8_t * data, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2) {
+void ssd1351_display_SendData(ssd1351_t * disp,
+		uint8_t * data, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2) {
 
 	uint32_t data_size;
 
-	if(x1 <= SSD1351_RANGE_W && x2 <= SSD1351_RANGE_W && y1 <= SSD1351_RANGE_H && y2 <= SSD1351_RANGE_H) {
+	if(x1 <= SSD1351_RANGE_W && x2 <= SSD1351_RANGE_W &&
+			y1 <= SSD1351_RANGE_H && y2 <= SSD1351_RANGE_H) {
 
 
 		data_size = (x2 - x1 + 1) * (y2 - y1 + 1) * PIXEL_SIZE;
@@ -133,17 +137,16 @@ void ssd1351_display_SendData(ssd1351_t * disp, uint8_t * data, uint8_t x1, uint
 
 void ssd1351_UpdateAll(ssd1351_t * disp){
 
-	disp->Mainframe.PPVRAM.State = !disp->Mainframe.PPVRAM.State;
-	gpio_set_level(27, disp->Mainframe.PPVRAM.State);
+	disp->FrameBuff.State = !disp->FrameBuff.State;
+	gpio_set_level(27, disp->FrameBuff.State);
 
 	 ssd1351_display_SendData(disp,
 			 (uint8_t *)VRAM_SEND,
-			 disp->Mainframe.geo.x,
-			 disp->Mainframe.geo.y,
-			 disp->Mainframe.geo.w - 1,
-			 disp->Mainframe.geo.h - 1
+			 disp->FrameBuff.geo.x,
+			 disp->FrameBuff.geo.y,
+			 disp->FrameBuff.geo.w - 1,
+			 disp->FrameBuff.geo.h - 1
 			 );
-
 
 }
 
@@ -247,7 +250,9 @@ inline void ssd1351_Sleep(ssd1351_t * disp, sleep_mode_e mode){
 
 inline pixel_vram_t ssd1351_color_rgba2PixelVRAM(rgba_t rgba) {
 
-	pixel_vram_t pxl_color = ((rgba.g << 13) | (rgba.b << 8) | (rgba.r << 3) | (rgba.g >> 3));
+	pixel_vram_t pxl_color;
+
+	pxl_color = ((rgba.g << 13) | (rgba.b << 8) | (rgba.r << 3) | (rgba.g >> 3));
 
 	return pxl_color;
 
@@ -286,13 +291,43 @@ inline void ssd1351_ClearAll(ssd1351_t * disp) {
 }
 
 
+
+static int8_t ssd1351_Window_RenderAll(ssd1351_t * disp) {
+
+
+	for (window_t * wndCur = disp->WindowList->tqh_first; wndCur != NULL;
+			wndCur = wndCur->WindowNodes.tqe_next) {
+
+		for(gfx_pos_t y_wnd = 0, y_mf = wndCur->data->geo.y;
+				y_mf < wndCur->data->geo.y + wndCur->data->geo.h;
+				y_mf++) {
+
+			for(gfx_pos_t x_wnd = 0, x_mf = wndCur->data->geo.x;
+					x_mf < wndCur->data->geo.x + wndCur->data->geo.w;
+					x_mf++) {
+
+				ssd1351_mainframe_PixelSet(disp, x_mf, y_mf,
+						ssd1351_PixelDataGet(wndCur, x_wnd, y_wnd));
+
+				x_wnd++;
+			}
+
+			y_wnd++;
+		}
+	}
+	return 1;
+}
+
+
+
 /* todo isnt used doesnt work with windows functions */
 /* for mainframe specific window type */
-inline void ssd1351_mainframe_PixelSet(ssd1351_t * disp, gfx_pos_t x, gfx_pos_t y, pixel_vram_t data) {
+inline void ssd1351_mainframe_PixelSet(ssd1351_t * disp,
+		gfx_pos_t x, gfx_pos_t y, pixel_vram_t data) {
 
-	if(x >= 0 && y >= 0 && x < disp->Mainframe.geo.w && y < disp->Mainframe.geo.h) {
+	if(x >= 0 && y >= 0 && x < disp->FrameBuff.geo.w && y < disp->FrameBuff.geo.h) {
 
-		*(VRAM_DRAW + disp->Mainframe.geo.w * y + x) = data;
+		*(VRAM_DRAW + disp->FrameBuff.geo.w * y + x) = data;
 
 	}
 }
@@ -300,11 +335,12 @@ inline void ssd1351_mainframe_PixelSet(ssd1351_t * disp, gfx_pos_t x, gfx_pos_t 
 
 
 /* for mainframe specific window type */
-inline pixel_vram_t ssd1351_mainframe_PixelGet(ssd1351_t * disp, gfx_pos_t x, gfx_pos_t y) {
+inline pixel_vram_t ssd1351_mainframe_PixelGet(ssd1351_t * disp,
+		gfx_pos_t x, gfx_pos_t y) {
 
-	if(x >= 0 && y >= 0 && x < disp->Mainframe.geo.w && y < disp->Mainframe.geo.h) {
+	if(x >= 0 && y >= 0 && x < disp->FrameBuff.geo.w && y < disp->FrameBuff.geo.h) {
 
-		return *(VRAM_DRAW + disp->Mainframe.geo.w * y + x);
+		return *(VRAM_DRAW + disp->FrameBuff.geo.w * y + x);
 
 	}
 	return 0;
@@ -313,11 +349,12 @@ inline pixel_vram_t ssd1351_mainframe_PixelGet(ssd1351_t * disp, gfx_pos_t x, gf
 
 
 /* for general window types */
-inline void ssd1351_PixelDataSet(window_t * wnd, gfx_pos_t x, gfx_pos_t y, pixel_vram_t data) {
+inline void ssd1351_PixelDataSet(window_t * wnd,
+		gfx_pos_t x, gfx_pos_t y, pixel_vram_t data) {
 
-	if(x >= 0 && y >= 0 && x < wnd->geo.w && y < wnd->geo.h) {
+	if(x >= 0 && y >= 0 && x < wnd->data->geo.w && y < wnd->data->geo.h) {
 
-		*( wnd->PPVRAM + wnd->geo.w * y + x) = data;
+		*( wnd->data->FrameBuff + wnd->data->geo.w * y + x) = data;
 
 	}
 }
@@ -325,15 +362,81 @@ inline void ssd1351_PixelDataSet(window_t * wnd, gfx_pos_t x, gfx_pos_t y, pixel
 
 
 /* for general window types */
-inline pixel_vram_t ssd1351_PixelDataGet(window_t * wnd, gfx_pos_t x, gfx_pos_t y) {
+inline pixel_vram_t ssd1351_PixelDataGet(window_t * wnd,
+		gfx_pos_t x, gfx_pos_t y) {
 
-	if(x >= 0 && y >= 0 && x < wnd->geo.w && y < wnd->geo.h) {
+	if(x >= 0 && y >= 0 && x < wnd->data->geo.w && y < wnd->data->geo.h) {
 
-	return *( wnd->PPVRAM + wnd->geo.w * y + x);
+	return *( wnd->data->FrameBuff + wnd->data->geo.w * y + x);
 
 	}
 	return 0;
 }
 
 
-/* todo createWindow fcn (malloc with MALLOC_SIMPLE) */
+
+uint8_t ssd1351_NewFrame(ssd1351_t * disp) {
+
+	static uint8_t prevState = 0;
+
+	/* display state is flipped when frame buffer transmission finishes */
+	if(prevState != disp->FrameBuff.State) {
+
+		prevState = disp->FrameBuff.State;
+
+		ssd1351_Window_RenderAll(disp);
+		ssd1351_UpdateAll(disp);
+
+		return 1; /* success: new frame began rendering on display */
+	}
+
+	return 0; /* error: previous frame rendering not yet finished */
+}
+
+int8_t ssd1351_Window_Create(window_t * wnd, ssd1351_t * disp,
+		layer_e layer, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h){
+
+	if(wnd == NULL) return -1; /* error: heap overflow */
+
+	wnd->data->FrameBuff = HAL_Malloc(MALLOC_SIMPLE, w * h * PIXEL_SIZE);
+
+	wnd->data->geo.x = x;
+	wnd->data->geo.y = y;
+	wnd->data->geo.w = w;
+	wnd->data->geo.h = h;
+	wnd->data->layer = layer;
+	wnd->data->display = disp;
+
+	if(disp->WindowList->tqh_first == NULL) {
+
+		TAILQ_INSERT_HEAD(disp->WindowList, wnd, WindowNodes);
+		return 1; /* success: inserted at head */
+	}
+
+	for (window_t * wndCur = disp->WindowList->tqh_first; wndCur != NULL;
+			wndCur = wndCur->WindowNodes.tqe_next) {
+
+		/* sort from lowest to highest head to tail */
+		if(wnd->data->layer > wndCur->data->layer) {
+
+			/* todo make so it adds before higher layer, after same layer,
+			 * so the same number layers have priority by creation time */
+
+			TAILQ_INSERT_AFTER(disp->WindowList, wndCur, wnd, WindowNodes);
+			return 2; /* success: inserted between head and tail */
+		}
+	}
+	TAILQ_INSERT_TAIL(disp->WindowList, wnd, WindowNodes);
+
+	return 3; /* success: inserted at tail */
+
+}
+int8_t ssd1351_Window_Delete(window_t * wnd){
+
+	free(wnd->data->FrameBuff);
+	TAILQ_REMOVE(disp->WindowList, wnd, WindowNodes);
+	memset(wnd, NULL, sizeof(window_t));
+
+	return 1;
+}
+

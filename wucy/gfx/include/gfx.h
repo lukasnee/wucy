@@ -38,6 +38,11 @@ typedef enum{
 }gfx_ref_e;
 
 void gfx_draw_SinglePixel(window_t * wnd, c_hex_t color, gfx_pos_t x, gfx_pos_t y);
+
+void gfx_draw_HLine(window_t * wnd, pixel_vram_t pxl_data, gfx_pos_t x, gfx_pos_t y, gfx_pos_t length);
+
+void gfx_draw_VLine(window_t * wnd, pixel_vram_t pxl_data, gfx_pos_t x, gfx_pos_t y, gfx_pos_t length);
+
 void gfx_draw_Rectangle(window_t * wnd, c_hex_t color, gfx_ref_e ref, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h);
 
 void gfx_draw_Box(window_t * wnd, c_hex_t color, gfx_ref_e ref, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h);

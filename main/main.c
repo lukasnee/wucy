@@ -92,38 +92,31 @@ void rotation(void * p){
 
 void test_fill(void *p){
 
-	uint8_t prevState = 0;
+	window_t SquareTest;
 
-	window_t window;
-	window.geo = disp.Mainframe.geo;
-	window.layer = disp.Mainframe.layer;
-
+	ssd1351_Window_Create(&SquareTest, &disp, 0, 0, 0, 127, 127);
 
 	while(1){
 
-		window.PPVRAM = (!disp.Mainframe.PPVRAM.State ? disp.Mainframe.PPVRAM.Pong : disp.Mainframe.PPVRAM.Ping);
+		gpio_set_level(25, 1);
 
-		if(disp.Mainframe.PPVRAM.State != prevState){
-
-			prevState = disp.Mainframe.PPVRAM.State;
-
-gpio_set_level(25, 1);
+		if(ssd1351_NewFrame(&disp)) {
 
 			ssd1351_ClearAll(&disp);
 			//gfx_draw_Box(&window, 0x000000, REF_BOTTOM_L,  0, 0, 128, 128);
 
-			gfx_draw_Box(&window, 0xFF0000, REF_BOTTOM_L, 	0, 		0, 		10, 10); 		// 	bottom left - RED
-			gfx_draw_Box(&window, 0x00FF00, REF_BOTTOM_R, 	127, 	0, 		10, 10); 		//	bottom right - GREEN
-			gfx_draw_Box(&window, 0x0000FF, REF_TOP_L, 		0, 		127, 	10, 10); 		//	top left - BLUE
-			gfx_draw_Box(&window, 0xFF00FF, REF_TOP_R, 		127, 	127, 	10, 10); 		//	top right - PURPLE
+			gfx_draw_Box(&SquareTest, 0xFF0000, REF_BOTTOM_L, 	0, 		0, 		10, 10); 		// 	bottom left - RED
+			gfx_draw_Box(&SquareTest, 0x00FF00, REF_BOTTOM_R, 	127, 	0, 		10, 10); 		//	bottom right - GREEN
+			gfx_draw_Box(&SquareTest, 0x0000FF, REF_TOP_L, 		0, 		127, 	10, 10); 		//	top left - BLUE
+			gfx_draw_Box(&SquareTest, 0xFF00FF, REF_TOP_R, 		127, 	127, 	10, 10); 		//	top right - PURPLE
 
 			for(int16_t d = 4; d <= 64; d +=6){
 
-				gfx_draw_Rectangle(&window, color, REF_CENTER, 64 + cos(i)*32, 64 + sin(i)*32, d, d);
+				gfx_draw_Rectangle(&SquareTest, color, REF_CENTER, 64 + cos(i)*32, 64 + sin(i)*32, d, d);
 			}
-
-gpio_set_level(25, 0);
 		}
+		gpio_set_level(25, 0);
+
 		vTaskDelay(1);
 	}
 }

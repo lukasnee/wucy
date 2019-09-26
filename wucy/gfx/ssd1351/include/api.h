@@ -34,7 +34,7 @@
 
 extern void HAL_PinWrite(ssd1351_t * disp, uint32_t pin, uint8_t state);
 extern void HAL_DelayMs(uint32_t ms);
-extern pixel_vram_t * HAL_FrameBufferMalloc(malloc_type_e malloc_type);
+extern pixel_vram_t * HAL_Malloc(malloc_type_e malloc_type, uint32_t size);
 extern void HAL_Init(ssd1351_t * disp);
 extern void HAL_DeInit(ssd1351_t * disp);
 extern void HAL_Transmit(ssd1351_t * disp, dc_e dc, uint8_t * data, uint32_t size);
@@ -48,7 +48,7 @@ extern void HAL_Transmit(ssd1351_t * disp, dc_e dc, uint8_t * data, uint32_t siz
 extern void USER_HAL_COM_PinOutputInit(uint32_t pin);
 extern void USER_HAL_COM_PinWrite(uint32_t pin, uint8_t state);
 extern void USER_HAL_COM_DelayMs(uint32_t ms);
-extern void * USER_HAL_FrameBufferMalloc(malloc_type_e malloc_type);
+extern void * USER_HAL_Malloc(malloc_type_e malloc_type, uint32_t size);
 
 /* User SPI HAL */
 extern void USER_HAL_SPI_Init(void);

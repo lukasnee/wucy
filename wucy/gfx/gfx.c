@@ -31,23 +31,6 @@
 #include "gfx.h"
 
 
-static void gfx_draw_HLine(window_t * wnd, pixel_vram_t pxl_data, gfx_pos_t x, gfx_pos_t y, gfx_pos_t length) {
-
-	for(uint16_t xc = x; xc < x + length; xc++) {
-
-		ssd1351_PixelDataSet(wnd, xc, y, pxl_data);
-	}
-}
-
-static void gfx_draw_VLine(window_t * wnd, pixel_vram_t pxl_data, gfx_pos_t x, gfx_pos_t y, gfx_pos_t length) {
-
-	for(uint16_t yc = y; yc < y + length; yc++) {
-
-		ssd1351_PixelDataSet(wnd, x, yc, pxl_data);
-	}
-}
-
-
 static gfx_geo_t gfx_AdjustRectRef(gfx_ref_e ref, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h) {
 
 	gfx_geo_t geo;
@@ -97,9 +80,6 @@ static gfx_geo_t gfx_AdjustRectRef(gfx_ref_e ref, gfx_pos_t x, gfx_pos_t y, gfx_
 
 
 
-
-
-
 /* INTENDED FOR SINGLE PIXEL COLORING, INEFFICIENT IF USED TO DRAW GRAPHICS WITH SOLID COLOR.
  * In this case to be efficient make a temporary pixel_vram_t variable and declare it with
  * color_hex2PixelVRAM(color_hex) to prepare formatted VRAM data,
@@ -109,6 +89,24 @@ inline void gfx_draw_SinglePixel(window_t * wnd, c_hex_t color, gfx_pos_t x, gfx
 
 	ssd1351_PixelDataSet(wnd, x, y, ssd1351_color_hex2PixelVRAM(color));
 
+}
+
+
+
+void gfx_draw_HLine(window_t * wnd, pixel_vram_t pxl_data, gfx_pos_t x, gfx_pos_t y, gfx_pos_t length) {
+
+	for(uint16_t xc = x; xc < x + length; xc++) {
+
+		ssd1351_PixelDataSet(wnd, xc, y, pxl_data);
+	}
+}
+
+void gfx_draw_VLine(window_t * wnd, pixel_vram_t pxl_data, gfx_pos_t x, gfx_pos_t y, gfx_pos_t length) {
+
+	for(uint16_t yc = y; yc < y + length; yc++) {
+
+		ssd1351_PixelDataSet(wnd, x, yc, pxl_data);
+	}
 }
 
 
@@ -136,11 +134,8 @@ void gfx_draw_Box(window_t * wnd, c_hex_t color, gfx_ref_e ref, gfx_pos_t x, gfx
 
 	for(gfx_pos_t y = geo.y; y < geo.y + geo.h; y++) {
 
-		for(uint16_t x = geo.x; x < geo.x + geo.w; x++) {
+		gfx_draw_HLine(wnd, pxl_data, x, y, geo.x + geo.w);
 
-			ssd1351_PixelDataSet(wnd, x, y, pxl_data);
-
-		}
 	}
 }
 //

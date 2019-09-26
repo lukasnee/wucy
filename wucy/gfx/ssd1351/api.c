@@ -72,9 +72,9 @@ inline void HAL_DelayMs(uint32_t ms) {
 	USER_HAL_COM_DelayMs(ms);
 }
 
-inline pixel_vram_t * HAL_FrameBufferMalloc(malloc_type_e malloc_type){
+inline pixel_vram_t * HAL_Malloc(malloc_type_e malloc_type, uint32_t size){
 
-		return (pixel_vram_t *)USER_HAL_FrameBufferMalloc(malloc_type);
+		return (pixel_vram_t *)USER_HAL_Malloc(malloc_type, size);
 
 }
 
@@ -107,13 +107,18 @@ inline void HAL_Init(ssd1351_t * disp) {
 		break;
 	}
 
-	disp->Mainframe.PPVRAM.Ping = HAL_FrameBufferMalloc(MALLOC_SPECIALIZED_DMA);
-	disp->Mainframe.PPVRAM.Pong = HAL_FrameBufferMalloc(MALLOC_SPECIALIZED_DMA);
-	disp->Mainframe.geo.x = 0;
-	disp->Mainframe.geo.y = 0;
-	disp->Mainframe.geo.w = SSD1351_WIDTH;
-	disp->Mainframe.geo.h = SSD1351_HEIGHT;
-	disp->Mainframe.layer = 0; /* background */
+
+	disp->FrameBuff.Ping = HAL_Malloc(MALLOC_SPECIALIZED_DMA, VRAM_SIZE);
+	disp->FrameBuff.Pong = HAL_Malloc(MALLOC_SPECIALIZED_DMA, VRAM_SIZE);
+	disp->FrameBuff.geo.x = 0;
+	disp->FrameBuff.geo.y = 0;
+	disp->FrameBuff.geo.w = SSD1351_WIDTH;
+	disp->FrameBuff.geo.h = SSD1351_HEIGHT;
+
+    TAILQ_INIT(&WindowListhead);
+
+	//memset(disp->WindowList, NULL, WINDOW_MAX_AMOUNT);
+
 }
 
 

@@ -55,6 +55,7 @@
 #include <string.h>
 #include <math.h>
 
+
 #include "ssd1351_cmd.h"
 
 
@@ -215,19 +216,32 @@ typedef struct{
 
 }gfx_geo_t;
 
+typedef enum {
+	LAYER_VERY_BOTTOM = 0,
+	LAYER_VERY_TOP = 0xFF
+
+}layer_e;
 
 typedef struct{
 
 	gfx_geo_t geo; /* geometry */
 
-	uint8_t layer; /* frame priority: drawn behind higher priority frames
+	layer_e layer; /* frame priority: drawn behind higher priority frames
 	and in front of lower priority frames */
 
-	pixel_vram_t * PPVRAM;
+	pixel_vram_t * FrameBuff;
 
-}window_t;
+	ssd1351_t * display; /* physical display attached to gfx library */
+
+}window_data_t;
+
+
+#define VRAM_DRAW (!disp->FrameBuff.State ? disp->FrameBuff.Pong : disp->FrameBuff.Ping)
+#define VRAM_SEND ( disp->FrameBuff.State ? disp->FrameBuff.Pong : disp->FrameBuff.Ping)
 
 typedef struct{
+
+	gfx_geo_t geo; /* geometry */
 
 	pixel_vram_t * Ping;	/* background buffer 1 */
 	pixel_vram_t * Pong;	/* background buffer 2 */
@@ -235,27 +249,29 @@ typedef struct{
 	enum{ PING_DRAW_PONG_SEND,
 		PING_SEND_PONG_DRAW} State:1;
 
-}pingpong_vram_t;
-
-#define VRAM_DRAW (!disp->Mainframe.PPVRAM.State ? disp->Mainframe.PPVRAM.Pong : disp->Mainframe.PPVRAM.Ping)
-#define VRAM_SEND ( disp->Mainframe.PPVRAM.State ? disp->Mainframe.PPVRAM.Pong : disp->Mainframe.PPVRAM.Ping)
-
-typedef struct{
-
-	gfx_geo_t geo; /* geometry */
-
-	uint8_t layer; /* frame priority: drawn behind higher priority frames
-	and in front of lower priority frames */
-
-	pingpong_vram_t PPVRAM;
-
 }mainframe_t;
+
+#include <sys/queue.h>
+
+struct WindowNode
+{
+	window_data_t * data;
+
+    TAILQ_ENTRY(WindowNode) WindowNodes;
+};
+
+TAILQ_HEAD(WindowList, WindowNode) WindowList;
+
+typedef struct WindowNode window_t;
+typedef struct WindowList WindowList_t;
 
 typedef struct{
 
 	interface_t 				Pin;
 	ssd1351_status_t 			Status;
-	mainframe_t 	 			Mainframe; /* background image (full vram frame buffer) */
+	mainframe_t 	 			FrameBuff; /* full frame data buffer */
+
+	WindowList_t * 				WindowList;
 
 }ssd1351_t;
 
@@ -284,11 +300,16 @@ pixel_vram_t ssd1351_color_hex2PixelVRAM(c_hex_t color_hex);
 void ssd1351_SetAll(ssd1351_t * disp);
 void ssd1351_ClearAll(ssd1351_t * disp);
 
+int8_t ssd1351_Window_RenderAll(ssd1351_t * disp);
 void ssd1351_mainframe_PixelSet(ssd1351_t * disp, gfx_pos_t x, gfx_pos_t y, pixel_vram_t data);
 pixel_vram_t ssd1351_mainframe_PixelGet(ssd1351_t * disp, gfx_pos_t x, gfx_pos_t y);
 
 void ssd1351_PixelDataSet(window_t * wnd, gfx_pos_t x, gfx_pos_t y, pixel_vram_t data);
 pixel_vram_t ssd1351_PixelDataGet(window_t * wnd, gfx_pos_t x, gfx_pos_t y);
 
+uint8_t ssd1351_NewFrame(ssd1351_t * disp);
+
+int8_t ssd1351_Window_Create(ssd1351_t * disp, layer_e layer, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h, window_t * window);
+int8_t ssd1351_Window_Delete(window_t * window);
 
 #endif /* COMPONENTS_SSD1351_FAST_H_ */

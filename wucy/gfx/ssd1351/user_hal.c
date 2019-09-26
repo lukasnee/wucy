@@ -141,7 +141,7 @@ inline void USER_HAL_COM_DelayMs(uint32_t ms) {
  * @return 	pointer to allocated memory block.
  *
  */
-inline void * USER_HAL_FrameBufferMalloc(malloc_type_e malloc_type) {
+inline void * USER_HAL_Malloc(malloc_type_e malloc_type, uint32_t size) {
 
  /* Use VRAM_SIZE definition as size for memory allocation  */
 
@@ -151,7 +151,7 @@ inline void * USER_HAL_FrameBufferMalloc(malloc_type_e malloc_type) {
 
 		/* USER CODE START */
 
-		return malloc(VRAM_SIZE);
+		return malloc(size);
 
 		/* USER CODE END */
 		break;
@@ -160,7 +160,7 @@ inline void * USER_HAL_FrameBufferMalloc(malloc_type_e malloc_type) {
 
 		/* USER CODE START */
 
-		return heap_caps_malloc(VRAM_SIZE, MALLOC_CAP_DMA);
+		return heap_caps_malloc(size, MALLOC_CAP_DMA);
 
 		/* USER CODE END */
 		break;
