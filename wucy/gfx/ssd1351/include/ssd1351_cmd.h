@@ -1,13 +1,16 @@
 /*
- * ssd1351.h
+ * ssd1351_cmd.h
  *
- *  Created on: 2019-09-05
+ *  Created on: 2019-09-25
  *      Author: lukas.neverauskis
  */
-
 /*
-	ssd1351 - software driver for ssd1351 display driver.
-	Portable, although designed for project WUCY. <https://github.com/therram/wucy>
+	Software for project "WUCY" - wearable open source general-purpose
+	computer based on ESP32 running FreeRTOS on custom Therram kernel.
+	<https://github.com/therram/wucy>
+
+	License: GPL 3.0
+
 	Copyright (C) 2019 Lukas Neverauskis
 
 	This program is free software: you can redistribute it and/or modify
@@ -24,164 +27,8 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef COMPONENTS_SSD1351_FAST_H_
-#define COMPONENTS_SSD1351_FAST_H_
-
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-
-/* ================================================================================ */
-/* |						User SSD1351 configurations							  |	*/
-/* ================================================================================ */
-
-#define SSD1351_WIDTH 128
-#define SSD1351_HEIGHT 128
-
-#define SSD1351_R_BD 5
-#define SSD1351_G_BD 6
-#define SSD1351_B_BD 5
-
-#define PIXEL_SIZE 2 /* in bytes */
-
-
-
-#define SPI_CLOCK_FREQ 14500000
-#define CLK_DIV_RATIO 0x00   /* cmd B3h A[3:0] */
-
-#define PHASE_1_PERIOD_VAL 5  		/* range: 5 -31 */
-#define PHASE_2_PERIOD_VAL 3		/* range: 3 -15 */
-#define DCLK_CURR_DRV_PERIOD 50 	/* phase 4 current drive stage */
-#define MUX_RATIO 127 				/* Range: 15 - 127 (16MUX ~ 128MUX accordingly)*/
-
-/* ================================================================================ */
-/* |								SSD1351 HAL				  					  |	*/
-/* ================================================================================ */
-
-/* formatting display settings */
-
-#define SSD1351_RANGE_H (SSD1351_WIDTH - 1)
-#define SSD1351_RANGE_W (SSD1351_HEIGHT - 1)
-
-#define SSD1351_A_MAX ((1 << 8) - 1)
-#define SSD1351_R_MAX ((1 << SSD1351_R_BD) - 1)
-#define SSD1351_G_MAX ((1 << SSD1351_G_BD) - 1)
-#define SSD1351_B_MAX ((1 << SSD1351_B_BD) - 1)
-
-#define TOTAL_PIXELS SSD1351_WIDTH * SSD1351_HEIGHT
-#define VRAM_SIZE TOTAL_PIXELS * PIXEL_SIZE
-
-#define AVAILABLE_FRAMERATE (SPI_CLOCK_FREQ / SSD1351_WIDTH / SSD1351_HEIGHT / PIXEL_SIZE / 8) /* for 14.5Mhz SPI ~ 55 fps */
-
-#define PHASE_1_PERIOD 		((PHASE_1_PERIOD_VAL - 1) / 2)
-#define PHASE_2_PERIOD 		(PHASE_2_PERIOD_VAL)
-#define PHASE_PERIODS_CMD 	(uint8_t)((PHASE_2_PERIOD << 4) | PHASE_1_PERIOD)
-#define DISPLAY_CLOCKS_PER_ROW (PHASE_1_PERIOD + PHASE_2_PERIOD + DCLK_CURR_DRV_PERIOD)
-
-#define CLK_DIV_RATIO_VAL 	(1 << CLK_DIV_RATIO)
-
-#define OSC_FREQ (CLK_DIV_RATIO_VAL * DISPLAY_CLOCKS_PER_ROW * MUX_RATIO / AVAILABLE_FRAMERATE) /* cmd  B3h A[7:4] */
-
-#define DIV_AND_OSC_CMD (uint8_t)((CLK_DIV_RATIO << 0) | (OSC_FREQ << 4)) /* formats config byte for B3h command */
-
-typedef uint8_t cmd_list_t;
-#define CMD_LIST_TERMINATE 0x00
-
-typedef enum{DC_COMMAND = 0, DC_DATA} dc_e;
-
-/* format 0xAARRGGBB where 0xAA - alpha byte, 0xRR - Red byte, 0xGG - Green byte, 0xBB - blue byte. */
-typedef uint32_t c_hex_t;
-typedef uint16_t pixel_vram_t;
-typedef int16_t pxl_pos_t; /* pixel coordinate on the display type */
-typedef struct{
-
-	uint8_t a; /* alpha transperancy: 0 - fully opaque, 0xFF - fully transperant */
-	uint8_t r; /* red */
-	uint8_t g; /* green */
-	uint8_t b; /* blue */
-
-}rgba_t;
-
-typedef struct{
-
-	pixel_vram_t b:SSD1351_B_BD;
-	pixel_vram_t g:SSD1351_G_BD;
-	pixel_vram_t r:SSD1351_R_BD;
-
-}pixel_t;
-
-#define WINDOW_SIZE(WINDOW) (WINDOW->x * WINDOW->y)
-#define WINDOW_LEFT_EDGE(WINDOW) (WINDOW->x)
-#define WINDOW_RIGHT_EDGE(WINDOW) (WINDOW->x + WINDOW->w - 1)
-#define WINDOW_BOTTOM_EDGE(WINDOW) (WINDOW->y)
-#define WINDOW_TOP_EDGE(WINDOW) (WINDOW->y + WINDOW->h - 1)
-
-typedef enum{ MALLOC_SIMPLE, MALLOC_SPECIALIZED_DMA}malloc_type_e;
-
-typedef struct{
-
-	pxl_pos_t x; /* x position on display (reference to left edge of frame) */
-	pxl_pos_t y; /* y position on display (reference to bottom edge of frame) */
-
-	/* coordinates x and y together references bottom left corner of the frame */
-
-	pxl_pos_t w; /* width of frame in pixels */
-	pxl_pos_t h; /* height of frame in pixels */
-
-	uint8_t layer; /* frame priority: drawn behind higher priority frames
-	and in front of lower priority frames */
-
-	pixel_vram_t * VRAM;	/* background buffer */
-
-}window_t;
-
-/* display management type structure START */
-
-typedef struct{
-
-	int32_t CLK, MOSI, MISO, CS, DC, RES, EN;
-
-}ssd1351_spi_t;
-
-/*todo: parallel 8080 support not added yet */
-typedef struct{
-
-	int32_t WR, RD, CS, DC, RES, EN;
-	uint8_t * DATA_BUS;/* todo: not quite sure how it will work yet*/
-
-}ssd1351_8_bit_parallel_t;
-
-typedef struct{
-
-	ssd1351_spi_t * 			SPI;
-	ssd1351_8_bit_parallel_t * 	Prll;
-
-} interface_t; /* interface pinout */
-
-typedef enum{UNINITIALIZED, INITIALIZED}ssd1351_init_e;
-typedef enum{SSD1351_IF_SPI, SSD1351_IF_8_BIT} ssd1351_hal_ci_e; /* HAL Communication Interfaces (CI) */
-typedef enum{EN_ACTIVE_HIGH, EN_ACTIVE_LOW} ssd1351_en_polarity_e;
-
-typedef struct{
-
-	ssd1351_init_e 			Init;
-	ssd1351_hal_ci_e 		Interface;
-	ssd1351_en_polarity_e 	EN_Polarity;
-
-}ssd1351_status_t;
-
-typedef struct{
-
-	interface_t 				Pin;
-	ssd1351_status_t 			Status;
-	window_t 					MainFrame; /* background image (full vram frame buffer) */
-
-
-}ssd1351_t;
-
-/* display management type structure END */
+#ifndef WUCY_GFX_SSD1351_INCLUDE_SSD1351_CMD_H_
+#define WUCY_GFX_SSD1351_INCLUDE_SSD1351_CMD_H_
 
 /* ================================================================================ */
 /* |						SSD1351 fundamental commands 						  |	*/
@@ -487,38 +334,4 @@ typedef struct{
 	  * 	(2) “*” stands for “Don’t care”.
 	  */
 
-
-typedef enum{
-	DISPLAY_ALL_OFF = SSD1351_CMD_DISPLAY_ALL_OFF,
-	DISPLAY_ALL_ON = SSD1351_CMD_DISPLAY_ALL_ON,
-	DISPLAY_NORMAL = SSD1351_CMD_DISPLAY_NORMAL,
-	DISPLAY_INVERSE = SSD1351_CMD_DISPLAY_INVERSE
-}display_mode_e;
-
-typedef enum{
-	SLEEP_ON = SSD1351_CMD_SLEEP_MODE_ON,
-	SLEEP_OFF = SSD1351_CMD_SLEEP_MODE_OFF
-}sleep_mode_e;
-
-/* ================================================================================ */
-/* |								SSD1351 Functions		  					  |	*/
-/* ================================================================================ */
-
-void ssd1351_SendCommand(ssd1351_t * disp, cmd_list_t * command_list);
-void ssd1351_SendData2Display(ssd1351_t * disp, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t * data);
-
-int8_t ssd1351_Init_via_SPI(ssd1351_t * display, ssd1351_spi_t * interface);
-int8_t ssd1351_Init_via_8080(ssd1351_t * display, ssd1351_8_bit_parallel_t * interface);
-void ssd1351_DeInit(ssd1351_t * display);
-void ssd1351_PowerOn(ssd1351_t * display);
-void ssd1351_PowerOff(ssd1351_t * display);
-
-void ssd1351_DisplayMode(ssd1351_t * display, display_mode_e mode);
-void ssd1351_Sleep(ssd1351_t * display, sleep_mode_e mode);
-
-rgba_t color_hex2rgba(c_hex_t color_hex);
-void ssd1351_PixelDataSet(window_t window, pxl_pos_t x, pxl_pos_t y, pixel_vram_t data);
-pixel_vram_t ssd1351_PixelDataGet(window_t window, pxl_pos_t x, pxl_pos_t y);
-
-void ssd1351_SendBackground(ssd1351_t * display);
-
+#endif /* WUCY_GFX_SSD1351_INCLUDE_SSD1351_CMD_H_ */

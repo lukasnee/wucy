@@ -27,8 +27,21 @@
 
 #include "ssd1351.h"
 
-void fill_block_bg(ssd1351_t * display, c_hex_t color, pxl_pos_t x, pxl_pos_t y, pxl_pos_t w, pxl_pos_t h);
-#endif /* COMPONENTS_SSD1351_FAST_H_ */
+typedef enum{
+
+	REF_BOTTOM_L, /* default - left bottom left */
+	REF_BOTTOM_R,
+	REF_TOP_L,
+	REF_TOP_R,
+	REF_CENTER
+
+}gfx_ref_e;
+
+void gfx_draw_SinglePixel(window_t * wnd, c_hex_t color, gfx_pos_t x, gfx_pos_t y);
+void gfx_draw_Rectangle(window_t * wnd, c_hex_t color, gfx_ref_e ref, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h);
+
+void gfx_draw_Box(window_t * wnd, c_hex_t color, gfx_ref_e ref, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h);
+
 
 
 

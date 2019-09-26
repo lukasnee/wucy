@@ -30,9 +30,19 @@
 
 #include "ssd1351.h"
 
-/* Go to this function declaration and adapt your specific Hardware Abstarction Layer (HAL)
- * code fragments for this display driver interface to work */
+/* API layer */
 
+extern void HAL_PinWrite(ssd1351_t * disp, uint32_t pin, uint8_t state);
+extern void HAL_DelayMs(uint32_t ms);
+extern pixel_vram_t * HAL_FrameBufferMalloc(malloc_type_e malloc_type);
+extern void HAL_Init(ssd1351_t * disp);
+extern void HAL_DeInit(ssd1351_t * disp);
+extern void HAL_Transmit(ssd1351_t * disp, dc_e dc, uint8_t * data, uint32_t size);
+
+
+
+
+/* HAL (lower abstraction) layer  */
 
 /* Common User HAL */
 extern void USER_HAL_COM_PinOutputInit(uint32_t pin);
@@ -49,17 +59,6 @@ extern void USER_HAL_SPI_Transmit(ssd1351_t * disp, uint8_t * data, uint32_t siz
 extern void USER_HAL_Parallel_Init(void);
 extern void USER_HAL_Parallel_DeInit(void);
 extern void USER_HAL_Parallel_Transmit(ssd1351_t * disp, uint8_t * data, uint32_t size, dc_e dc);
-
-
-
-extern void HAL_PinWrite(ssd1351_t * disp, uint32_t pin, uint8_t state);
-extern void HAL_DelayMs(uint32_t ms);
-extern pixel_vram_t * HAL_FrameBufferMalloc(malloc_type_e malloc_type);
-extern void HAL_Init(ssd1351_t * disp);
-extern void HAL_DeInit(ssd1351_t * disp);
-extern void HAL_Transmit(ssd1351_t * disp, dc_e dc, uint8_t * data, uint32_t size);
-
-
 
 
 #endif /* COMPONENTS_SSD1351_INCLUDE_API_H_ */

@@ -225,7 +225,7 @@ spi_device_interface_config_t devcfg = {
 
     .clock_speed_hz = SPI_CLOCK_FREQ,           			//Clock out at 26 MHz
     .mode = 0,                                				//SPI mode 0
-    .queue_size = 7,                          				//We want to be able to queue 7 transactions at a time
+    .queue_size = 1,                          				//We want to be able to queue 7 transactions at a time
     .pre_cb = spi_pre_transfer_callback,  					//Specify pre-transfer callback to handle D/C line
 	.spics_io_num = 22, 									/* CS pin */
 };
@@ -296,7 +296,9 @@ inline void USER_HAL_SPI_Transmit(ssd1351_t * disp, uint8_t * data, uint32_t siz
 	spi_transaction.length = size * 8;            						/* bytes to transmit (in bits). */
 	spi_transaction.tx_buffer = data;              						/* data buffer to transmit */
 	spi_transaction.user = (void*)(dc);									/* Pass CD level so the transmit callback would set it accordingly  */
-	retval = spi_device_polling_transmit(spi_oled, &spi_transaction);  	/* Begin transmission */
+
+	retval = spi_device_transmit(spi_oled, &spi_transaction);			/* Begin transmission */
+	//retval = spi_device_polling_transmit(spi_oled, &spi_transaction);
 	assert(retval == ESP_OK);   										/* Should have had no issues. */
 
 	/* USER CODE END */

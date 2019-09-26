@@ -27,13 +27,14 @@
 #include "freertos/task.h"
 #include "freertos/timers.h"
 #include "esp_system.h"
-#include "esp_spi_flash.h"
+//#include "esp_spi_flash.h"
 #include "driver/gpio.h"
 
 
-#include "ssd1351.h"
+#include "gfx.h"
 
 	ssd1351_t disp;
+
 	ssd1351_spi_t dispInterface = {
 
 		.CLK = 19,
@@ -44,6 +45,8 @@
 		.RES = 18,
 		.EN = -1	/* -1 for "not used" */
 	};
+
+
 
 /* ================================================================================ */
 /* |									MAIN	 							  	  |	*/
@@ -63,10 +66,10 @@ void tos_draw_screen(void *p){
 
 		if(!drawnFlag){
 			gpio_set_level(26, 1);
-			ssd1351_SendBackground(&disp);
+
+			ssd1351_display_UpdateAll(&disp);
 			drawnFlag = 1;
 			gpio_set_level(26, 0);
-
 		}
 	}
 
@@ -95,15 +98,16 @@ void test_fill(void *p){
  		 if(drawnFlag){
 
  			gpio_set_level(25, 1);
-			fill_block_bg(&disp, 0x000000, 0, 0, 127, 127);
+			gfx_draw_Box(&disp.MainFrame, REF_BOTTOM_L, 0x000000, 0, 0, 127, 127);
 
-			fill_block_bg(&disp, 0xFF0000, 0, 0, 10, 10); 			// 	bottom left - RED
-			fill_block_bg(&disp, 0x00FF00, 127, 0, -10, 10); 		//	bottom right - GREEN
-			fill_block_bg(&disp, 0x0000FF, 0, 127, 10, -10); 		//	top left - BLUE
-			fill_block_bg(&disp, 0xFF00FF, 127, 127, -10, -10); 	//	top right - PURPLE
+			gfx_draw_Box(&disp.MainFrame, REF_BOTTOM_L,  0xFF0000, 0, 0, 10, 10); 			// 	bottom left - RED
+			gfx_draw_Box(&disp.MainFrame, REF_BOTTOM_L,  0x00FF00, 127, 0, -10, 10); 		//	bottom right - GREEN
+			gfx_draw_Box(&disp.MainFrame, REF_BOTTOM_L,  0x0000FF, 0, 127, 10, -10); 		//	top left - BLUE
+			gfx_draw_Box(&disp.MainFrame, REF_BOTTOM_L,  0xFF00FF, 127, 127, -10, -10); 	//	top right - PURPLE
 
+			gfx_draw_Rectangle(&disp.MainFrame, color, REF_CENTER, 64 + cos(i)*32, 64 + sin(i)*32, 64, 64);
 
-			fill_block_bg(&disp, 0xFFFFFF, 40 + cos(i)*40, 40 + sin(i)*40, 40, 40);
+			gfx_draw_Box(&disp.MainFrame, 0xFFFFFF, REF_CENTER, 64 + cos(i)*32, 64 + sin(i)*32, 50, 50);
 
 			drawnFlag = 0;
 			gpio_set_level(25, 0);

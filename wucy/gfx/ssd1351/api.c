@@ -108,11 +108,11 @@ inline void HAL_Init(ssd1351_t * disp) {
 	}
 
 	disp->MainFrame.VRAM = HAL_FrameBufferMalloc(MALLOC_SPECIALIZED_DMA);
-	disp->MainFrame.x = 0;
-	disp->MainFrame.y = 0;
-	disp->MainFrame.w = SSD1351_WIDTH;
-	disp->MainFrame.h = SSD1351_HEIGHT;
-	disp->MainFrame.layer = 0;
+	disp->MainFrame.geo.x = 0;
+	disp->MainFrame.geo.y = 0;
+	disp->MainFrame.geo.w = SSD1351_WIDTH;
+	disp->MainFrame.geo.h = SSD1351_HEIGHT;
+	disp->MainFrame.layer = 0; /* background */
 }
 
 

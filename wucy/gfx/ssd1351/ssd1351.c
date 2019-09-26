@@ -60,6 +60,7 @@ uint8_t default_settings[] = {
 	SSD1351_CMD_CONFIG_REG, 1, 0x24,    /* 0x10 flips horziontally (referencing pin text as up)*/ /* 0x20 flips vertical  (referencing pin text as up) */
 
 	SSD1351_CMD_DISPLAY_NORMAL, 0,
+
 	CMD_LIST_TERMINATE};
 
 /* ================================================================================ */
@@ -85,7 +86,7 @@ uint8_t default_settings[] = {
  * uint8_t command_list[final]: "COMMAND LIST TERMINATOR - 0x00"		0x00
  * */
 
-void ssd1351_SendCommand(ssd1351_t * disp, cmd_list_t * command_list) {
+static void ssd1351_SendCommand(ssd1351_t * disp, cmd_list_t * command_list) {
 
 	uint32_t pos = 0;
 
@@ -107,7 +108,7 @@ void ssd1351_SendCommand(ssd1351_t * disp, cmd_list_t * command_list) {
 
 #include "driver/gpio.h"
 
-void ssd1351_SendData2Display(ssd1351_t * disp, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, uint8_t * data) {
+void ssd1351_display_Update(ssd1351_t * disp, uint8_t * data, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2) {
 
 	uint32_t data_size;
 
@@ -127,52 +128,50 @@ void ssd1351_SendData2Display(ssd1351_t * disp, uint8_t x1, uint8_t y1, uint8_t 
 		gpio_set_level(27, 1);
 		HAL_Transmit(disp, DC_DATA, data, data_size);
 		gpio_set_level(27, 0);
-//		for(uint8_t line = 0; line < SSD1351_WIDTH; line++){
-//
-//			uint8_t pre_vram_dump[] = {
-//					SSD1351_CMD_SET_ADDRESS_COLUMN, 2, line, line, //0x7F -SSD1351_RANGE_H */
-//					SSD1351_CMD_SET_ADDRESS_ROW, 2, y1 & 0x7F, y2 & 0x7F,
-//					SSD1351_CMD_RAM_WRITE, 0,
-//			CMD_LIST_TERMINATE};
-//
-//			ssd1351_SendCommand(disp, pre_vram_dump);
-//
-//			HAL_Transmit(disp, DC_DATA, data + line * SSD1351_WIDTH * PIXEL_SIZE, SSD1351_WIDTH * PIXEL_SIZE);
-//		}
 	}
 }
 
+void ssd1351_display_UpdateAll(ssd1351_t * disp){
 
-int8_t ssd1351_Init_via_SPI(ssd1351_t * display, ssd1351_spi_t * interface) {
+	 ssd1351_display_Update(disp,
+			 (uint8_t *)(disp->MainFrame.VRAM),
+			 disp->MainFrame.geo.x,
+			 disp->MainFrame.geo.y,
+			 disp->MainFrame.geo.w - 1,
+			 disp->MainFrame.geo.h - 1
+			 );
+}
 
-	if(display->Status.Init == UNINITIALIZED) {
+int8_t ssd1351_Init_via_SPI(ssd1351_t * disp, ssd1351_spi_t * interface) {
 
-		display->Pin.SPI = interface;
-		display->Status.Interface = SSD1351_IF_SPI;
+	if(disp->Status.Init == UNINITIALIZED) {
 
-		HAL_Init(display);
+		disp->Pin.SPI = interface;
+		disp->Status.Interface = SSD1351_IF_SPI;
 
-		display->Status.Init = INITIALIZED;
+		HAL_Init(disp);
 
-		ssd1351_PowerOn(display);
+		disp->Status.Init = INITIALIZED;
+
+		ssd1351_PowerOn(disp);
 
 		return 0;
 	}
 	return -1;
 }
 
-int8_t ssd1351_Init_via_8080(ssd1351_t * display, ssd1351_8_bit_parallel_t * interface) {
+int8_t ssd1351_Init_via_8080(ssd1351_t * disp, ssd1351_8_bit_parallel_t * interface) {
 
-	if(display->Status.Init == UNINITIALIZED) {
+	if(disp->Status.Init == UNINITIALIZED) {
 
-		display->Pin.Prll = interface;
-		display->Status.Interface = SSD1351_IF_8_BIT;
+		disp->Pin.Prll = interface;
+		disp->Status.Interface = SSD1351_IF_8_BIT;
 
-		HAL_Init(display);
+		HAL_Init(disp);
 
-		display->Status.Init = INITIALIZED;
+		disp->Status.Init = INITIALIZED;
 
-		ssd1351_PowerOn(display);
+		ssd1351_PowerOn(disp);
 
 		return 0;
 	}
@@ -180,45 +179,45 @@ int8_t ssd1351_Init_via_8080(ssd1351_t * display, ssd1351_8_bit_parallel_t * int
 }
 
 
-void ssd1351_DeInit(ssd1351_t * display){
+void ssd1351_DeInit(ssd1351_t * disp){
 
-	HAL_DeInit(display);
-	ssd1351_PowerOff(display);
+	HAL_DeInit(disp);
+	ssd1351_PowerOff(disp);
 }
 
 
 
-void ssd1351_PowerOn(ssd1351_t * display){
+void ssd1351_PowerOn(ssd1351_t * disp){
 
-	HAL_PinWrite(display, display->Pin.SPI->RES, 0);
+	HAL_PinWrite(disp, disp->Pin.SPI->RES, 0);
 	HAL_DelayMs(1);
-	HAL_PinWrite(display, display->Pin.SPI->RES, 1);
+	HAL_PinWrite(disp, disp->Pin.SPI->RES, 1);
 	HAL_DelayMs(1);
-	//HAL_PinWrite(display, display->Pin.SPI->EN, 1); /* enable high voltage Vcc supply (usually from boost converter) */
+	//HAL_PinWrite(disp, disp->Pin.SPI->EN, 1); /* enable high voltage Vcc supply (usually from boost converter) */
 	HAL_DelayMs(300); /* delay minimum 300 ms before sending screen on command */
 
-	ssd1351_SendCommand(display, default_settings);
-	ssd1351_Sleep(display, SLEEP_OFF);
+	ssd1351_SendCommand(disp, default_settings);
+	ssd1351_Sleep(disp, SLEEP_OFF);
 
 }
 
 
-void ssd1351_PowerOff(ssd1351_t * display){
+void ssd1351_PowerOff(ssd1351_t * disp){
 
-	ssd1351_Sleep(display, SLEEP_ON);
-	HAL_PinWrite(display, display->Pin.SPI->EN, 0);
+	ssd1351_Sleep(disp, SLEEP_ON);
+	HAL_PinWrite(disp, disp->Pin.SPI->EN, 0);
 
 }
 
-inline void ssd1351_DisplayMode(ssd1351_t * display, display_mode_e mode){
+inline void ssd1351_DisplayMode(ssd1351_t * disp, display_mode_e mode){
 
 	cmd_list_t cmd[] = {mode, 0, CMD_LIST_TERMINATE};
-	ssd1351_SendCommand(display, cmd);
+	ssd1351_SendCommand(disp, cmd);
 
 }
 
 
-inline void ssd1351_Sleep(ssd1351_t * display, sleep_mode_e mode){
+inline void ssd1351_Sleep(ssd1351_t * disp, sleep_mode_e mode){
 
 	/*  todo SSD1351_CMD_FUNCTION_SELECT (0xAB) data byte must be merged
 	 *  with interface selection bits A[7:6] if 16 - bit parallel port used,
@@ -230,18 +229,18 @@ inline void ssd1351_Sleep(ssd1351_t * display, sleep_mode_e mode){
 
 	if(mode == SLEEP_ON || mode == SLEEP_OFF){
 
-		ssd1351_SendCommand(display, cmd);
+		ssd1351_SendCommand(disp, cmd);
 		if(mode == SLEEP_OFF){
 			HAL_DelayMs(1);
 			regulator[2] = 0x01; /* Command for enable internal VDD regulator */
 		}
 
-		ssd1351_SendCommand(display, regulator);
+		ssd1351_SendCommand(disp, regulator);
 
 	}
 }
 
-inline pixel_vram_t color_rgba2PixelVRAM(rgba_t rgba) {
+inline pixel_vram_t ssd1351_color_rgba2PixelVRAM(rgba_t rgba) {
 
 	pixel_vram_t pxl_color = ((rgba.g << 13) | (rgba.b << 8) | (rgba.r << 3) | (rgba.g >> 3));
 
@@ -261,41 +260,25 @@ rgba_t color_hex2rgba(c_hex_t color_hex) {
 	return rgba;
 }
 
-pixel_vram_t color_hex2PixelVRAM(c_hex_t color_hex) {
+pixel_vram_t ssd1351_color_hex2PixelVRAM(c_hex_t color_hex) {
 
-	return color_rgba2PixelVRAM(color_hex2rgba(color_hex));
-
-}
-
-inline void ssd1351_PixelDataSet(window_t window, pxl_pos_t x, pxl_pos_t y, pixel_vram_t data) {
-
-	*(window.VRAM + window.w * y + x) = data;
+	return ssd1351_color_rgba2PixelVRAM(color_hex2rgba(color_hex));
 
 }
 
-inline pixel_vram_t ssd1351_PixelDataGet(window_t window, pxl_pos_t x, pxl_pos_t y) {
+inline void ssd1351_PixelDataSet(window_t * window, gfx_pos_t x, gfx_pos_t y, pixel_vram_t data) {
 
-	return *(window.VRAM + window.w * y + x);
+	if(x >= 0 && y >= 0 && x < window->geo.w && y < window->geo.h) {
 
+		*(window->VRAM + window->geo.w * y + x) = data;
+
+	}
 }
 
-/* INTENDED FOR SINGLE PIXEL COLORING, INEFFICIENT IF USED TO DRAW GRAPHICS WITH SOLID COLOR.
- * In this case to be efficient make a temporary pixel_vram_t variable and declare it with
- * color_hex2PixelVRAM(color_hex) to prepare formatted VRAM data,
- * then repeat ssd1351_PixelDataSet() to "draw" multiple pixels.
- * */
-inline void ssd1351_PixelColorSet(window_t window, pxl_pos_t x, pxl_pos_t y, c_hex_t color) {
+inline pixel_vram_t ssd1351_PixelDataGet(window_t * window, gfx_pos_t x, gfx_pos_t y) {
 
-	ssd1351_PixelDataSet(window, x, y, color_hex2PixelVRAM(color));
+	return *(window->VRAM + window->geo.w * y + x);
 
 }
-
-
-void ssd1351_SendBackground(ssd1351_t * display){
-
-	 ssd1351_SendData2Display(display, 0, 0, SSD1351_RANGE_W, SSD1351_RANGE_H, (uint8_t *)(display->MainFrame.VRAM));
-}
-
-
 
 /* todo createWindow fcn (malloc with MALLOC_SIMPLE) */
