@@ -19,7 +19,7 @@ I'm still learning how github works, I'm an amateur hacker, DM me if you think y
 ### Hardware
 
 _Highest priority from top to bottom. 
-(if hardware features at the bottom of the list will get hard to implement physical-space/cost/time/skill-wise, I might do some cuts)_
+(described hardware list implementation depends on physical-space, cost, time and complexity, so I might have to do some cuts)_
 
 * **CORE - ESP32-PICO-D4** (very powerful SIP: Xtensa® dual-core 32-bit LX6 microprocessors, up to 600 MIPS, integerated WiFi & BLE, 448 KB ROM, 520 KB SRAM, integrates 4 MB of external SPI flash, Quad-SPI supports multiple flash/SRAM chips).
 * **Display - SSD1351** (128x128 18-bit color OLED). I think it is perfect for this application. Costs just above 10 $ on aliExpress.
@@ -30,7 +30,7 @@ _Highest priority from top to bottom.
 * **Programming - CP2102**  USB to UART bridge (Espressif's recommendation).
 * ??? **Power management** - battery management IC, 3.3V LDO.
 * ??? **Real-time clock** - 32K Quartz(?)(todo: research RTC capabilities inside ESP32, my priority to use as little external parts as possible).
-* ??? **Extra Flash - better safe than sorry.** Will do if there will be enough space left. 
+* ??? **Extra flash - better safe than sorry.** Will do if there will be enough space left. 
 * ??? **Sensors** - Accelerometer and Gyroscope at least.
 
 * ??? Indication - single color or RGB LED (depends on IO pins left on MCU).
