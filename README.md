@@ -6,7 +6,7 @@
   **Y(?)**  
 
 `Technically a neat watch.`  
-`Philosophically - truly personal computer.`  
+`Philosophically - truly personal wearable.`  
 `For hackers. For fun.`  
  
 ### Vision
