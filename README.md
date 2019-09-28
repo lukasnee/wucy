@@ -11,17 +11,16 @@
  
 ### Vision
 
-My early vision is to create hardware & software platform and spark a community of hackers around it. 
-My further vision is to create a neat wearable watch-like computer that is truly personal to the user being open source :). Technically you could call it "a simple smartwatch", but I don't like the word "smart" - it's as dumb as any other computer, it does only what's told, what's told by a single user - that's how I like it :). Having FOSS will only enforce this.
+My early vision is to create a neat watch-like wearable computer that is truly personal. How so ? By being open source. Technically you could this project a _simple smartwatch_, but I don't like the word "smart" - it's as dumb as any other computer, it does only what's told, what's told by a user, a single user. And that's how I like it :). I am a believer in open source and i think that having FOSS will only enforce user's security by also keeping Wucy community based. And this is my further vision - create hardware & software platform and spark a community of hackers around it. 
 
-I encourage you to join. If there will be a demand, I might consider making wucy's DIY kits or prebuild hardware making them plug&play, however that sounds like a devastating labour by hand... Thats a problem for future, if there will ever be one, lol.
+Currently I am working on this alone and I encourage you to join.  
 
-I'm still learning how github works, I'm an amateur hacker, DM me if you think you can help me kickstart this project, although I'm quite happy working alone in current progress stage. About the progress down at the very bottom.
+I'm still learning how github works, I'm an amateur hacker, DM me if you think you can help. About the progress down at the bottom.
 
 ### Hardware
 
 _Highest priority from top to bottom 
-(described hardware list implementation depends on physical-space, cost, time and complexity, so I might have to do some cuts)._
+(This is my initial idea for hardware. These features are physical-space/cost/time/complexity dependant, so I might have to do some cuts later)._
 
 * **CORE - ESP32-PICO-D4** (very powerful SIP: Xtensa® dual-core 32-bit LX6 microprocessors, up to 600 MIPS, integerated WiFi & BLE, 448 KB ROM, 520 KB SRAM, integrates 4 MB of external SPI flash, Quad-SPI supports multiple flash/SRAM chips).
 * **Display - SSD1351** (128x128 18-bit color OLED). I think it is perfect for this application. Costs just above 10 $ on aliExpress.
@@ -37,6 +36,8 @@ _Highest priority from top to bottom
 
 * ??? Indication - single color or RGB LED (depends on IO pins left on MCU).
 * ??? Vibration - tiny motor (maybe on rev.2 if power consumption will be efficient).
+
+If there will be a demand, I might consider making wucy's DIY kits or prebuild hardware making them plug&play, however that sounds like a devastating labour by hand... Thats a problem for future, if there will ever be one, lol.
 
 ### Software 
 Custom therram kernel wrapped in FreeRTOS with neat GUI, easy access to system hardware IO, external file storage etc. I want a great flexibility on power usage and computing performance. I want to make an API framework for easy application developement within the kernel and on top of the system. All code in C, I want this wearable to be fast and sexy. Currently developing on ESP-IDF framework, optimizing for ESP32, however I also think about portability, so structure code accordingly.  
