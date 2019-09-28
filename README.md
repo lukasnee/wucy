@@ -3,7 +3,7 @@
   **Wearable**  
   **Unlimited** (open source, general-purpose)  
   **Computer**  
-  **Yeah..!**  
+  **Y**  
 
 `For hackers. For fun.`  
 
