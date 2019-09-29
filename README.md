@@ -43,7 +43,7 @@ Custom kernel wrapped in FreeRTOS with neat GUI, easy access to system hardware 
 ### Progress
 
 * 2019-09-28 
-Very much a work in progress. Nothing really works as a whole. I have written a bit of kernel and GUI framework - it is a year old project started on STM32, it already has working button driver, animated menu dropdown list, visual RTC, animated watch face, time editing, settings menu, fps indication, freeRTOS run time stats window. So I will need to port it to ESP-IDF - currently that GUI work is done on monochrome ssd1306 oled display. Therefore now I am working on SSD1351 driven OLED display which is bigger and full color. Already written a driver with windows support, early gfx library, both need a lot of tweaking and new features. Considering what display interface to use -serial or parallel. I really do want the display to run at 60 fps, but it seems it is impossible with SPI, theoretically I can get up to around 50 fps, which might be good enough. I have to decide that to move on with the hardware. I already have crude Fusion360 model, case-less parts composition, board dimensions planned out, started designing PCB and selecting parts...
+Very much a work in progress. Nothing really works as a whole. I have written a bit of kernel and GUI framework - it is a year old project started on STM32, it already has working button driver, animated menu dropdown list, visual RTC, animated watch face, time editing, settings menu, fps indication, freeRTOS run time stats window. Currently that GUI is desinged around monochrome SSD1306 OLED display, so I will need to reconstruct and port that progress to my current ESP-IDF platform. Now I am working on SSD1351 driven OLED display which is bigger and full color. Already written a driver with windows support, early gfx library, both need a lot of tweaking and new features. Considering what display interface to use -serial or parallel. I really do want the display to run at 60 fps, but it seems it is impossible with SPI. Theoretically I can get up to around 50 fps, which might be good enough. I have to decide that to move on with the hardware. I already have crude Fusion360 model, case-less parts composition, board dimensions planned out, started designing PCB and selecting parts...
 
 ### Future ideas
 
@@ -56,13 +56,14 @@ I want this project to be purely open-source and stay that always, I'm a believe
 
 Hardware licensing will come into consideration later, currently I don't have any decent documentation to publish.
 
-Take everything with a grain of salt, I'm an inexperienced engineer.
-Luckily I have a vision and I'm open for guidance. Contact me if you resonate with my ideas.
+### Extra
+
+Take everything with a grain of salt, I'm an inexperienced engineer. I don't know what I'm doing.
+Luckily I have this idea and pursuit of making it real.
 
 Some of my inspirations: 
-Pebble watch (almost got one, but then fitbit happend :<); 
-Zak Kemble's N|Watch (never had one tho);
-Steve Wozniak, Unexpected maker, Mohit Bhoite, Linus Torvalds, Elon Musk xd.
+Pebble watch; Zak Kemble's N|Watch (never had one tho);
+Steve Wozniak, Unexpected maker, Mohit Bhoite, Linus Torvalds.
 
 [More info in wiki](https://github.com/therram/thera/wiki).
   
