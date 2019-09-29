@@ -1,9 +1,8 @@
-# W.U.C.Y.  
+# W.R.C.  
 
   **Wearable**  
-  **Unlimited** (open source, general-purpose)  
+  **Retro**
   **Computer**  
-  **Y(?)**  
 
 `Technically a neat watch.`  
 `Philosophically - truly personal wearable.`  
@@ -11,16 +10,15 @@
  
 ### Vision
 
-My early vision is to create a neat watch-like wearable computer that is truly personal. How so ? By being open source. Technically you could this project a _simple smartwatch_, but I don't like the word "smart" - it's as dumb as any other computer, it does only what's told, what's told by a user, a single user. And that's how I like it :). I am a believer in open source and i think that having FOSS will only enforce user's security by also keeping Wucy community based. And this is my further vision - create hardware & software platform and spark a community of hackers around it. 
+is to create retro watch-like open-source wearable computer. Technically you could call this an open source _smartwatch_, but I don't like the word "smart" - in fact - computers are dumb, they only do what's told as long as their open and I'd like to keep it that way. So I'd rather call it _honest_ than _smart_ :). My plan is to create hardware & software platform, spark a community, have fun and make something special.
 
-Currently I am working on this alone and I encourage you to join.  
-
+Currently I am working on this alone, but I encourage you to join.  
 I'm still learning how github works, I'm an amateur hacker, DM me if you think you can help. About the progress down at the bottom.
 
 ### Hardware
 
-_Highest priority from top to bottom 
-(This is my initial idea for hardware. These features are physical-space/cost/time/complexity dependant, so I might have to do some cuts later)._
+Loose initial idea for hardware.
+_(Highest priority from top to bottom)_
 
 * **CORE - ESP32-PICO-D4** (very powerful SIP: Xtensa® dual-core 32-bit LX6 microprocessors, up to 600 MIPS, integerated WiFi & BLE, 448 KB ROM, 520 KB SRAM, integrates 4 MB of external SPI flash, Quad-SPI supports multiple flash/SRAM chips).
 * **Display - SSD1351** (128x128 18-bit color OLED). I think it is perfect for this application. Costs just above 10 $ on aliExpress.
@@ -40,17 +38,12 @@ _Highest priority from top to bottom
 If there will be a demand, I might consider making wucy's DIY kits or prebuild hardware making them plug&play, however that sounds like a devastating labour by hand... Thats a problem for future, if there will ever be one, lol.
 
 ### Software 
-Custom therram kernel wrapped in FreeRTOS with neat GUI, easy access to system hardware IO, external file storage etc. I want a great flexibility on power usage and computing performance. I want to make an API framework for easy application developement within the kernel and on top of the system. All code in C, I want this wearable to be fast and sexy. Currently developing on ESP-IDF framework, optimizing for ESP32, however I also think about portability, so structure code accordingly.  
+Custom kernel wrapped in FreeRTOS with neat GUI, easy access to system hardware IO, external file storage etc. I want great flexibility on power usage and computing performance. I want to make an API framework for easy application developement within the kernel and on top of the system. All code in C, I want this wearable to be fast and efficient. Currently developing on ESP-IDF framework, I think ESP32 is a great SoC to start on, however I do think about portability, so I structure my code accordingly.  
 
 ### Progress
 
 * 2019-09-28 
-Very much a work in progress. Nothing really works as a whole. I have written a bit of kernel and GUI framework - it is a year old project started on STM32, so I will need to transfer it and port it to ESP-IDF - it already has working button driver, animated menu dropdown list, visual RTC, animated watch face, time editing, settings menu, fps indication, freeRTOS run time stats window but all that is on monochrome ssd1306 oled display. Therefore now, I am working on hacking SSD1351 driven OLED display which is bigger and full color. Already written a driver with windows support, early gfx framework library, both needs a lot of tweaking and new features. Now really considering to use serial or parallel interface, I really do want it running at 60 fps, but it seems it is impossible with SPI, theoretically I can get up to around 50 fps, which might be good enough. I have to decide that to move on with the hardware. I already have crude Fusion360 model, case-less parts composition, board dimensions planned out, started designing PCB...
-
-Some of my inspirations: 
-  Pebble watch (almost got one, but then fitbit happend :<); 
-  Zak Kemble's N|Watch (never had one tho);
-  Steve Wozniak, Unexpected maker, Mohit Bhoite, Linus Torvalds, Elon Musk xd.
+Very much a work in progress. Nothing really works as a whole. I have written a bit of kernel and GUI framework - it is a year old project started on STM32, it already has working button driver, animated menu dropdown list, visual RTC, animated watch face, time editing, settings menu, fps indication, freeRTOS run time stats window. So I will need to port it to ESP-IDF - currently that GUI work is done on monochrome ssd1306 oled display. Therefore now I am working on SSD1351 driven OLED display which is bigger and full color. Already written a driver with windows support, early gfx library, both need a lot of tweaking and new features. Considering what display interface to use -serial or parallel. I really do want the display to run at 60 fps, but it seems it is impossible with SPI, theoretically I can get up to around 50 fps, which might be good enough. I have to decide that to move on with the hardware. I already have crude Fusion360 model, case-less parts composition, board dimensions planned out, started designing PCB and selecting parts...
 
 ### Future ideas
 
@@ -63,8 +56,13 @@ I want this project to be purely open-source and stay that always, I'm a believe
 
 Hardware licensing will come into consideration later, currently I don't have any decent documentation to publish.
 
-Take everything with a grain of salt, I have zero experience for a project which is quite sophisticated.
-Luckily I have a vision and I'm open for guidance. Contact me if you resonate with my vision and views.
+Take everything with a grain of salt, I'm an inexperienced engineer.
+Luckily I have a vision and I'm open for guidance. Contact me if you resonate with my ideas.
+
+Some of my inspirations: 
+Pebble watch (almost got one, but then fitbit happend :<); 
+Zak Kemble's N|Watch (never had one tho);
+Steve Wozniak, Unexpected maker, Mohit Bhoite, Linus Torvalds, Elon Musk xd.
 
 [More info in wiki](https://github.com/therram/thera/wiki).
   
