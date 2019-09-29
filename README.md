@@ -10,7 +10,7 @@
  
 ### Vision
 
-is to create retro watch-like open-source wearable computer. Technically you could call this an open source _smartwatch_, but I don't like the word "smart" - in fact - computers are dumb, they only do what's told as long as their open and I'd like to keep it that way. So I'd rather call it _honest_ than _smart_ :). My plan is to create hardware & software platform, spark a community, have fun and make something special.
+is to create retro watch-like open-source wearable computer. Technically you could call this an open source _smartwatch_, but I don't like the word "smart" - in fact - computers are dumb, they only do what's told as long as they are open and I'd like to keep it that way. So I'd rather call it _honest_ than _smart_ :). My plan is to create hardware & software platform, spark a community, have fun and make something special.
 
 Currently I am working on this alone, but I encourage you to join.  
 I'm still learning how github works, I'm an amateur hacker, DM me if you think you can help. About the progress down at the bottom.
