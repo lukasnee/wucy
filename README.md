@@ -1,7 +1,7 @@
 # W.R.C.  
 
   **Wearable**  
-  **Retro**
+  **Retro**  
   **Computer**  
 
 `Technically a neat watch.`  
