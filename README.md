@@ -67,4 +67,4 @@ Steve Wozniak, Unexpected maker, Mohit Bhoite, Linus Torvalds.
 
 [More info in wiki](https://github.com/therram/thera/wiki).
   
-![](https://github.com/therram/wucy/wucy/wucy-code-structure.png)
+![](./wucy/wucy-code-structure.png)
