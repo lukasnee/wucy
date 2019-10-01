@@ -1,6 +1,4 @@
-# W.U.C.Y.  
-
- **Wearable retro computer**  
+# WUCY - wearable retro computer**  
 
 `Quite a simple & hackable watch for nerds.`
 
