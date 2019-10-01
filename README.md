@@ -54,13 +54,13 @@ Maybe create a bootloader that could enable loading precompiled applications suc
 ### License
 All of my contribution will be under open hardware and open software licenses. I'm very new to licensing, however here's my current decision:
 
-I want this project to be purely open-source, World is too corrupt already, and to me it feels important, so I decided to license my software under copy-left GPL-3.0 (at least for now). 
+I want this project to be purely open source. World is too corrupt already so believe it is important to license my software under copy-left GPL-3.0. 
 
 Hardware licensing will come into consideration later, currently I don't have any decent documentation to publish.
 
 ### Extra
 
-Take everything with a grain of salt, I'm an inexperienced engineer, still a student. Honestly, I don't really know what I'm doing. I just have this idea in my mind and I want to make it somewhat real. I thinks it is cool.
+Take everything with a grain of salt, I'm an inexperienced engineer, still a student. Honestly, I don't really know what I'm doing. I just have this idea in my mind and I want to make it somewhat real. I thinks it is quite cool.
 
 Some of my inspirations: 
 Zak Kemble's N|Watch; Pebble watch; 
