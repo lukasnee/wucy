@@ -40,6 +40,9 @@ If there will be a demand, I might consider making wucy's DIY kits or prebuild h
 ### Software 
 Custom kernel wrapped in FreeRTOS with neat GUI, easy access to system hardware IO, external file storage etc. I want great flexibility on power usage and computing performance. I want to make an API framework for easy application developement within the kernel and on top of the system. I want this wearable to be fast and efficient. Currently developing on ESP-IDF framework, I think ESP32 is a great SoC to start on, however I do think about portability, so I structure my code accordingly.  
 
+  
+![Current plan for system structure. Modular operating system.](./wucy/wucy-code-structure.png)
+
 ### Progress
 
 * 2019-09-28 
@@ -66,5 +69,4 @@ Pebble watch; Zak Kemble's N|Watch (never had one tho);
 Steve Wozniak, Unexpected maker, Mohit Bhoite, Linus Torvalds.
 
 [More info in wiki](https://github.com/therram/thera/wiki).
-  
-![](./wucy/wucy-code-structure.png)
+
