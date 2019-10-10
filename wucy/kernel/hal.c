@@ -6,9 +6,9 @@
  */
 
 /*
-	ssd1351 - software driver for ssd1351 display driver.
-	Portable, although designed for project WUCY. <https://github.com/therram/wucy>
-	Copyright (C) 2019 Lukas Neverauskis
+	Software for project "WUCY" - wearable open source general-purpose
+	computer based on ESP32 running FreeRTOS on custom Therram kernel.
+	<https://github.com/therram/wucy>
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -24,16 +24,19 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <stdio.h>
 
-#include "ssd1351.h"
-#include "api.h"
-/* USER PRIVATE INCLUDES START */
+#include "wucyOS.h"
+#include "hal.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/timers.h"
-#include "esp_system.h"
+//#include "heap/include/esp_heap_caps.h"
+#include "driver/spi_master.h"
 
+#include "esp_system.h"
+//#include "esp_spi_flash.h"
 #include "driver/gpio.h"
 
 	/* USER PRIVATE INCLUDES END */
@@ -46,23 +49,21 @@
 
 /* USER PIRVATE VARIABLES START */
 
-	extern ssd1351_spi_t dispInterface;
-
 	/* USER PIRVATE VARIABLES END */
 
 
 
-	/* ================================================================================ */
-	/* |								Common HAL									  |	*/
-	/* |							(Must be filled in)								  |	*/
-	/* ================================================================================ */
+/* ================================================================================ */
+/* |								Common HAL									  |	*/
+/* |							(Must be filled in)								  |	*/
+/* ================================================================================ */
 
 /* @brief Initialize pin as output.
  *
  * @param 	pin Pin to initialize.
  *
  */
-inline void USER_HAL_COM_PinOutputInit(uint32_t pin) {
+inline void wucy_hal_PinOutputInit(uint32_t pin) {
 
 	/* USER CODE START */
 
@@ -85,7 +86,7 @@ inline void USER_HAL_COM_PinOutputInit(uint32_t pin) {
  * 						1 - Set output to high.
  *
  */
-inline void USER_HAL_COM_PinWrite(uint32_t pin, uint8_t state) {
+inline void wucy_hal_PinWrite(uint32_t pin, uint8_t state) {
 
 	/* USER CODE START */
 
@@ -105,7 +106,7 @@ inline void USER_HAL_COM_PinWrite(uint32_t pin, uint8_t state) {
  * @param 	ms Milliseconds to delay.
  *
  */
-inline void USER_HAL_COM_DelayMs(uint32_t ms) {
+inline void wucy_hal_DelayMs(uint32_t ms) {
 
 	/* NOTE !
 	 * Initialize selected Communication Interface elsewhere
@@ -119,8 +120,6 @@ inline void USER_HAL_COM_DelayMs(uint32_t ms) {
 	/* USER CODE END */
 
 }
-
-
 
 
 
@@ -141,7 +140,7 @@ inline void USER_HAL_COM_DelayMs(uint32_t ms) {
  * @return 	pointer to allocated memory block.
  *
  */
-inline void * USER_HAL_Malloc(malloc_type_e malloc_type, uint32_t size) {
+inline void * wucy_hal_Malloc(malloc_type_e malloc_type, uint32_t size) {
 
  /* Use VRAM_SIZE definition as size for memory allocation  */
 
@@ -188,7 +187,8 @@ inline void * USER_HAL_Malloc(malloc_type_e malloc_type, uint32_t size) {
 /* |							(Filling in is optional)						  |	*/
 /* ================================================================================ */
 
-#include "driver/spi_master.h"
+
+
 //#include "esp_heap_caps.h"
 
 spi_transaction_t spi_transaction;
@@ -210,7 +210,7 @@ spi_bus_config_t buscfg = {
 	.sclk_io_num = 19,
     .quadwp_io_num = -1,
     .quadhd_io_num = -1,
-    .max_transfer_sz = VRAM_SIZE
+    .max_transfer_sz = DISP_FRAMEBUFF_SIZE
 };
 
 
@@ -218,12 +218,12 @@ spi_bus_config_t buscfg = {
 void spi_pre_transfer_callback(spi_transaction_t *t)
 {
 	dc_e dc = (dc_e)t->user;
-    gpio_set_level(dispInterface.DC, dc);  /*todo figure out what to do before spi message */
+    gpio_set_level(21, dc);  /*todo figure out what to do before spi message */
 }
 
 spi_device_interface_config_t devcfg = {
 
-    .clock_speed_hz = SPI_CLOCK_FREQ,           			//Clock out at 26 MHz
+    .clock_speed_hz = DISP_SPI_CLOCK_FREQ,           		//Clock out at 26 MHz
     .mode = 0,                                				//SPI mode 0
     .queue_size = 1,                          				//We want to be able to queue 7 transactions at a time
     .pre_cb = spi_pre_transfer_callback,  					//Specify pre-transfer callback to handle D/C line
@@ -239,7 +239,7 @@ spi_device_interface_config_t devcfg = {
  * 			Usually for peripheral setup.
  *
  */
-inline void USER_HAL_SPI_Init(void) {
+inline void wucy_hal_SPI_Init(void) {
 
 	/* NOTE !
 	 * Initialize selected communication interface elsewhere
@@ -263,7 +263,7 @@ inline void USER_HAL_SPI_Init(void) {
 /* @brief 	[optional] Routine called just after deinitialization of display on SPI interface.
  *
  */
-inline void USER_HAL_SPI_DeInit(void) {
+inline void wucy_hal_SPI_DeInit(void) {
 
 	/* USER CODE START */
 
@@ -287,7 +287,7 @@ inline void USER_HAL_SPI_DeInit(void) {
  * 								1 - data
  *
  */
-inline void USER_HAL_SPI_Transmit(ssd1351_t * disp, uint8_t * data, uint32_t size, dc_e dc) {
+inline void wucy_hal_SPI_Transmit(uint8_t * data, uint32_t size, uint8_t dc) {
 
 	/* USER CODE START */
 
@@ -306,9 +306,6 @@ inline void USER_HAL_SPI_Transmit(ssd1351_t * disp, uint8_t * data, uint32_t siz
 }
 
 
-
-
-
 /* ================================================================================ */
 /* |						8080 Parallel 8-bit interface HAL					  |	*/
 /* |							 (Filling in is optional)						  |	*/
@@ -321,7 +318,7 @@ inline void USER_HAL_SPI_Transmit(ssd1351_t * disp, uint8_t * data, uint32_t siz
  * 			Usually for peripheral setup.
  *
  */
-inline void USER_HAL_Parallel_Init(void) {
+inline void wucy_hal_Parallel_Init(void) {
 
 	/* NOTE !
 	 * Initialize selected communication interface elsewhere
@@ -342,7 +339,7 @@ inline void USER_HAL_Parallel_Init(void) {
 /* @brief 	[optional] Routine called just after deinitialization of display on parallel interface.
  *
  */
-inline void USER_HAL_Parallel_DeInit(void) {
+inline void wucy_hal_Parallel_DeInit(void) {
 
 	/* USER CODE START */
 
@@ -361,7 +358,7 @@ inline void USER_HAL_Parallel_DeInit(void) {
  * @param 	size Number of bytes to send.
  *
  */
-inline void USER_HAL_Parallel_Transmit(ssd1351_t * disp, uint8_t * data, uint32_t size, dc_e dc) {
+inline void wucy_hal_Parallel_Transmit(uint8_t * data, uint32_t size, uint8_t dc) {
 
 
 

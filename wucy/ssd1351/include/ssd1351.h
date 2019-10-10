@@ -6,8 +6,9 @@
  */
 
 /*
-	ssd1351 - software driver for ssd1351 type display.
+	ssd1351 - software driver for ssd1351 display.
 	Portable, although designed for project WUCY. <https://github.com/therram/wucy>
+
 	Copyright (C) 2019 Lukas Neverauskis
 
 	This program is free software: you can redistribute it and/or modify
@@ -49,33 +50,20 @@
 #ifndef COMPONENTS_SSD1351_FAST_H_
 #define COMPONENTS_SSD1351_FAST_H_
 
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
 
+#include <stdint.h>
 
 #include "ssd1351_cmd.h"
 
+
+#define USE_WINDOWS
 
 
 /* ================================================================================ */
 /* |						User SSD1351 configurations							  |	*/
 /* ================================================================================ */
 
-#define SSD1351_WIDTH 128
-#define SSD1351_HEIGHT 128
 
-#define SSD1351_R_BD 5
-#define SSD1351_G_BD 6
-#define SSD1351_B_BD 5
-
-#define PIXEL_SIZE 2 /* in bytes */
-
-
-
-#define SPI_CLOCK_FREQ 14500000
 #define CLK_DIV_RATIO 0x00   /* cmd B3h A[3:0] */
 
 #define PHASE_1_PERIOD_VAL 5  		/* range: 5 -31 */
@@ -89,18 +77,25 @@
 
 /* formatting display settings */
 
-#define SSD1351_RANGE_H (SSD1351_WIDTH - 1)
-#define SSD1351_RANGE_W (SSD1351_HEIGHT - 1)
+#define SSD1351_WIDTH 128
+#define SSD1351_HEIGHT 128
 
-#define SSD1351_A_MAX ((1 << 8) - 1)
-#define SSD1351_R_MAX ((1 << SSD1351_R_BD) - 1)
-#define SSD1351_G_MAX ((1 << SSD1351_G_BD) - 1)
-#define SSD1351_B_MAX ((1 << SSD1351_B_BD) - 1)
+#define DISP_RED_BIT_DEPTH 5
+#define DISP_GREEN_BIT_DEPTH 6
+#define DISP_BLUE_BIT_DEPTH 5
 
-#define TOTAL_PIXELS SSD1351_WIDTH * SSD1351_HEIGHT
+#define PIXEL_SIZE 2 /* in bytes */
+
+#define DISP_A_MAX ((1 << 8) - 1) /* display alpha (transperancy) max value */
+
+#define DISP_R_MAX ((1 << DISP_RED_BIT_DEPTH) - 1) /* display red gray scale max value */
+#define DISP_G_MAX ((1 << DISP_GREEN_BIT_DEPTH) - 1) /* display green gray scale max value */
+#define DISP_B_MAX ((1 << DISP_BLUE_BIT_DEPTH) - 1) /* display blue gray scale max value */
+
+#define TOTAL_PIXELS DISP_WIDTH * DISP_HEIGHT
 #define VRAM_SIZE TOTAL_PIXELS * PIXEL_SIZE
 
-#define AVAILABLE_FRAMERATE (SPI_CLOCK_FREQ / SSD1351_WIDTH / SSD1351_HEIGHT / PIXEL_SIZE / 8) /* for 14.5Mhz SPI ~ 55 fps */
+#define AVAILABLE_FRAMERATE (DISP_SPI_CLOCK_FREQ / DISP_WIDTH / DISP_HEIGHT / PIXEL_SIZE / 8) /* for 14.5Mhz SPI ~ 55 fps */
 
 #define PHASE_1_PERIOD 		((PHASE_1_PERIOD_VAL - 1) / 2)
 #define PHASE_2_PERIOD 		(PHASE_2_PERIOD_VAL)
@@ -118,7 +113,6 @@ typedef uint8_t cmd_list_t;
 
 typedef enum{DC_COMMAND = 0, DC_DATA} dc_e;
 
-typedef enum{ MALLOC_SIMPLE, MALLOC_SPECIALIZED_DMA}malloc_type_e;
 
 typedef enum{
 	DISPLAY_ALL_OFF = SSD1351_CMD_DISPLAY_ALL_OFF,
@@ -182,14 +176,14 @@ typedef uint16_t pixel_vram_t;
 
 typedef struct{
 
-	pixel_vram_t b:SSD1351_B_BD;
-	pixel_vram_t g:SSD1351_G_BD;
-	pixel_vram_t r:SSD1351_R_BD;
+	pixel_vram_t b:DISP_BLUE_BIT_DEPTH;
+	pixel_vram_t g:DISP_GREEN_BIT_DEPTH;
+	pixel_vram_t r:DISP_RED_BIT_DEPTH;
 
 }pixel_t;
 
-/* format 0xAARRGGBB where 0xAA - alpha byte, 0xRR - Red byte, 0xGG - Green byte, 0xBB - blue byte. */
-typedef uint32_t c_hex_t;
+
+
 
 typedef struct{
 
@@ -200,7 +194,14 @@ typedef struct{
 
 }rgba_t;
 
+typedef struct{
 
+	interface_t 				Pin;
+	ssd1351_status_t 			Status;
+
+}ssd1351_t;
+
+#ifndef USE_WINDOWS
 /* pixel coordinate on the display type */
 typedef int16_t gfx_pos_t;
 
@@ -215,101 +216,39 @@ typedef struct{
 	gfx_pos_t h; /* height of frame in pixels */
 
 }gfx_geo_t;
+#endif
 
-typedef enum {
-	LAYER_VERY_BOTTOM = 0,
-	LAYER_VERY_TOP = 0xFF
-
-}layer_e;
-
-typedef struct{
-
-	gfx_geo_t geo; /* geometry */
-
-	layer_e layer; /* frame priority: drawn behind higher priority frames
-	and in front of lower priority frames */
-
-	pixel_vram_t * FrameBuff;
-
-	ssd1351_t * display; /* physical display attached to gfx library */
-
-}window_data_t;
-
-
-#define VRAM_DRAW (!disp->FrameBuff.State ? disp->FrameBuff.Pong : disp->FrameBuff.Ping)
-#define VRAM_SEND ( disp->FrameBuff.State ? disp->FrameBuff.Pong : disp->FrameBuff.Ping)
-
-typedef struct{
-
-	gfx_geo_t geo; /* geometry */
-
-	pixel_vram_t * Ping;	/* background buffer 1 */
-	pixel_vram_t * Pong;	/* background buffer 2 */
-
-	enum{ PING_DRAW_PONG_SEND,
-		PING_SEND_PONG_DRAW} State:1;
-
-}mainframe_t;
-
-#include <sys/queue.h>
-
-struct WindowNode
-{
-	window_data_t * data;
-
-    TAILQ_ENTRY(WindowNode) WindowNodes;
-};
-
-TAILQ_HEAD(WindowList, WindowNode) WindowList;
-
-typedef struct WindowNode window_t;
-typedef struct WindowList WindowList_t;
-
-typedef struct{
-
-	interface_t 				Pin;
-	ssd1351_status_t 			Status;
-	mainframe_t 	 			FrameBuff; /* full frame data buffer */
-
-	WindowList_t * 				WindowList;
-
-}ssd1351_t;
+#ifdef SSD1351_PRIV_ACCESS
 
 /* ================================================================================ */
 /* |								SSD1351 Functions		  					  |	*/
 /* ================================================================================ */
 
+void ssd1351_SendData(ssd1351_t * disp, uint8_t * data, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2);
 
-void ssd1351_display_SendData(ssd1351_t * disp, uint8_t * data, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2);
-void ssd1351_UpdateAll(ssd1351_t * display);
+int8_t ssd1351_InitViaSPI(ssd1351_t * disp, ssd1351_spi_t * interface);
+int8_t ssd1351_InitVia8080(ssd1351_t * disp, ssd1351_8_bit_parallel_t * interface);
 
+void ssd1351_DeInit(ssd1351_t * disp);
 
-int8_t ssd1351_Init_via_SPI(ssd1351_t * display, ssd1351_spi_t * interface);
-int8_t ssd1351_Init_via_8080(ssd1351_t * display, ssd1351_8_bit_parallel_t * interface);
-void ssd1351_DeInit(ssd1351_t * display);
-void ssd1351_PowerOn(ssd1351_t * display);
-void ssd1351_PowerOff(ssd1351_t * display);
+void ssd1351_PowerOn(ssd1351_t * disp);
+void ssd1351_PowerOff(ssd1351_t * disp);
 
-void ssd1351_DisplayMode(ssd1351_t * display, display_mode_e mode);
-void ssd1351_Sleep(ssd1351_t * display, sleep_mode_e mode);
+void ssd1351_DisplayMode(ssd1351_t * disp, display_mode_e mode);
+void ssd1351_Sleep(ssd1351_t * disp, sleep_mode_e mode);
 
-pixel_vram_t ssd1351_color_rgba2PixelVRAM(rgba_t rgba);
+pixel_vram_t ssd1351_color_HEX2PixelData(uint32_t color_hex);
 
-pixel_vram_t ssd1351_color_hex2PixelVRAM(c_hex_t color_hex);
+/* todo OLD BAD CODE, NEEDS FIXING */
+#ifndef USE_WINDOWS
 
 void ssd1351_SetAll(ssd1351_t * disp);
 void ssd1351_ClearAll(ssd1351_t * disp);
 
-int8_t ssd1351_Window_RenderAll(ssd1351_t * disp);
-void ssd1351_mainframe_PixelSet(ssd1351_t * disp, gfx_pos_t x, gfx_pos_t y, pixel_vram_t data);
-pixel_vram_t ssd1351_mainframe_PixelGet(ssd1351_t * disp, gfx_pos_t x, gfx_pos_t y);
+void ssd1351_PixelSet(ssd1351_t * disp, gfx_pos_t x, gfx_pos_t y, pixel_vram_t data);
+pixel_vram_t ssd1351_PixelGet(ssd1351_t * disp, gfx_pos_t x, gfx_pos_t y);
+#endif /* USE_WINDOWS */
 
-void ssd1351_PixelDataSet(window_t * wnd, gfx_pos_t x, gfx_pos_t y, pixel_vram_t data);
-pixel_vram_t ssd1351_PixelDataGet(window_t * wnd, gfx_pos_t x, gfx_pos_t y);
-
-uint8_t ssd1351_NewFrame(ssd1351_t * disp);
-
-int8_t ssd1351_Window_Create(ssd1351_t * disp, layer_e layer, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h, window_t * window);
-int8_t ssd1351_Window_Delete(window_t * window);
+#endif /* SSD1351_PRIV_ACCESS */
 
 #endif /* COMPONENTS_SSD1351_FAST_H_ */
