@@ -32,8 +32,6 @@
 
 #include "wucyOS.h"
 
-
-
 static void window_mf_SetPixel(windows_t * windows,
 		gfx_pos_t x, gfx_pos_t y, pixelData_t data) {
 
