@@ -122,19 +122,40 @@ static void ssd1351_SendCommand(ssd1351_t * disp, cmd_list_t * command_list) {
 }
 
 
+#ifdef WUCY_OPTIMIZE
+
+
+void ssd1351_SendData(ssd1351_t * disp,
+		uint8_t * data, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2) {
+
+	uint32_t data_size;
+
+		uint8_t pre_vram_dump[] = {
+			SSD1351_CMD_SET_ADDRESS_COLUMN, 2, x1, x2, //0x7F -SSD1351_RANGE_H */
+			SSD1351_CMD_SET_ADDRESS_ROW, 2, y1, y2,
+			SSD1351_CMD_RAM_WRITE, 0,
+		CMD_LIST_TERMINATE};
+
+		ssd1351_SendCommand(disp, pre_vram_dump);
+
+		ssd1351_Transmit(disp, DC_DATA, data, DISP_FRAMEBUFF_SIZE);
+
+}
+#else
+
 
 /*todo consider making data type pxl_vram_t?*/
 void ssd1351_SendData(ssd1351_t * disp,
 		uint8_t * data, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2) {
 
 	uint32_t data_size;
-#ifndef WUCY_OPTIMIZE
+
 	if(x1 <= DISP_RANGE_W && x2 <= DISP_RANGE_W &&
 			y1 <= DISP_RANGE_H && y2 <= DISP_RANGE_H) {
 
 
 		data_size = (x2 - x1 + 1) * (y2 - y1 + 1) * PIXEL_SIZE;
-#endif
+
 		uint8_t pre_vram_dump[] = {
 			SSD1351_CMD_SET_ADDRESS_COLUMN, 2, x1 & 0x7F, x2 & 0x7F, //0x7F -SSD1351_RANGE_H */
 			SSD1351_CMD_SET_ADDRESS_ROW, 2, y1 & 0x7F, y2 & 0x7F,
@@ -143,17 +164,14 @@ void ssd1351_SendData(ssd1351_t * disp,
 
 		ssd1351_SendCommand(disp, pre_vram_dump);
 
-		ssd1351_Transmit(disp, DC_DATA, data,
-			#ifndef WUCY_OPTIMIZE
-					data_size
-			#else
-					DISP_FRAMEBUFF_SIZE
-			#endif
-		);
-#ifndef WUCY_OPTIMIZE
+		ssd1351_Transmit(disp, DC_DATA, data, data_size);
+
 	}
-#endif
+
 }
+
+#endif
+
 
 int8_t ssd1351_InitViaSPI(ssd1351_t * disp, ssd1351_spi_t * interface) {
 

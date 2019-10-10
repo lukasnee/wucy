@@ -53,30 +53,138 @@ static pixelData_t window_mf_GetPixel(windows_t * windows, gfx_pos_t x, gfx_pos_
 
 
 
-static int8_t window_LayerWindows(windows_t * windows) {
+static void window_Layering(windows_t * windows) {
 
-	/* todo add transperancy merging feature */
+		/* todo add transperancy merging feature */
 
-	for (window_t * wndCur = windows->List.tqh_first; wndCur != NULL;
-			wndCur = wndCur->Windows.tqe_next) {
+	while(windows->Status.Framing) {
 
-		for(gfx_pos_t y_wnd = 0, y_mf = wndCur->geo.y;
-				y_mf < wndCur->geo.y + (wndCur->geo.h > DISP_HEIGHT ? DISP_HEIGHT : wndCur->geo.h);
-				y_mf++) {
+		window_mf_ClearAll(windows);
 
-			for(gfx_pos_t x_wnd = 0, x_mf = wndCur->geo.x;
-					x_mf < wndCur->geo.x + (wndCur->geo.w > DISP_WIDTH ? DISP_WIDTH : wndCur->geo.w);
-					x_mf++) {
+		for (window_t * wndCur = windows->List.tqh_first; wndCur != NULL;
+				wndCur = wndCur->Windows.tqe_next) {
 
-				window_mf_SetPixel(windows, x_mf, y_mf, wucy_wnd_PixelGet(wndCur, x_wnd, y_wnd));
+			if(wndCur->RedrawCondition) {
 
-				x_wnd++;
+				wndCur->RedrawFcn(NULL);
 			}
 
-			y_wnd++;
+			for(gfx_pos_t y_wnd = 0, y_mf = wndCur->geo.y;
+					y_mf < wndCur->geo.y + (wndCur->geo.h > DISP_HEIGHT ? DISP_HEIGHT : wndCur->geo.h);
+					y_mf++) {
+
+				for(gfx_pos_t x_wnd = 0, x_mf = wndCur->geo.x;
+						x_mf < wndCur->geo.x + (wndCur->geo.w > DISP_WIDTH ? DISP_WIDTH : wndCur->geo.w);
+						x_mf++) {
+
+					window_mf_SetPixel(windows, x_mf, y_mf, wucy_wnd_PixelGet(wndCur, x_wnd, y_wnd));
+
+					x_wnd++;
+				}
+
+				y_wnd++;
+			}
 		}
+		windows->Status.LayeringDone = 1;
+		vTaskSuspend(NULL);
 	}
-	return 1;
+	vTaskDelete(NULL);
+}
+
+
+
+static void window_Framing(windows_t * windows) {
+
+	while(windows->Status.Framing) {
+
+		if (windows->Status.FirstFrame
+			|| ( windows->Status.LayeringDone && windows->Status.TransmissionDone &&
+					(fps_limiter_e)pvTimerGetTimerID(windows->Status.FPSLimiter_th) == FPS_LIMITER_ELAPSED
+				)
+			) {
+
+			windows->Status.FirstFrame = 0;
+			windows->Status.NewFrameReady = 1;
+
+			/* reset frame completion */
+			windows->Status.LayeringDone = 0;
+			windows->Status.TransmissionDone = 0;
+			vTimerSetTimerID(windows->Status.FPSLimiter_th, (void *) FPS_LIMITER_RESET);
+
+			/* switch frame buffer state */
+			windows->Mainframe.State = !windows->Mainframe.State;
+
+			/* begin timer for limiter */
+			xTimerStart(windows->Status.FPSLimiter_th, 0);
+
+			/* Before rendering new frame to display,
+			 * enable layering task which has lower priority by a single step.
+			 * Eventualy current task will pause on transmission and pass on to layering task */
+
+			vTaskResume(windows->LayeringTask);
+
+			/* begin transmission */
+			wucy_disp_RenderNewFrame((uint8_t *)VRAM_SEND);
+
+			/*
+			 * ...
+			 *
+			 * task stops here until transmission is finished
+			 *
+			 * ...
+			 *
+			 */
+
+			windows->Status.TransmissionDone = 1;
+
+		}
+
+		vTaskDelay(1);
+	}
+	vTaskDelete(NULL);
+}
+
+
+static void window_FPSLimiterCallback(TimerHandle_t xTimer) {
+
+	vTimerSetTimerID(xTimer, (void *) FPS_LIMITER_ELAPSED);
+}
+
+
+
+
+int8_t window_FramingStart(windows_t * windows, uint8_t fps) {
+
+	windows->Status.Framing = 1;
+	windows->Status.FirstFrame = 1;
+	windows->Config.Fps = fps;
+
+	vTimerSetTimerID(windows->Status.FPSLimiter_th, FPS_LIMITER_RESET);
+	windows->Status.FPSLimiter_th = xTimerCreate("FPSLimiter\0",
+			1000 / fps / portTICK_PERIOD_MS, pdFALSE, 0, window_FPSLimiterCallback);
+	xTimerStart(windows->Status.FPSLimiter_th, 0);
+
+	windows->FramingTask = (void (*)(void *))window_Framing;
+	windows->LayeringTask = (void (*)(void *))window_Layering;
+
+	xTaskCreate((void (*)(void *))window_Framing, "wnds_frm\0", 1024, windows, WUCY_WNDS_FRAME_TASK_PRIOR, NULL);
+	xTaskCreate((void (*)(void *))window_Layering, "wnds_lyr\0", 1024, windows, WUCY_WNDS_LAYER_TASK_PRIOR, NULL);
+
+
+	return 0; /* success */
+}
+
+
+
+int8_t window_FramingStop(windows_t * windows) {
+
+	xTimerDelete(windows->Status.FPSLimiter_th, 0);
+	vTaskDelete(windows->FramingTask);
+	vTaskDelete(windows->LayeringTask);
+
+	memset(&(windows->Status), 0x00, sizeof(wnd_state_t));
+
+	return 0; /* success */
 }
 
 
@@ -100,6 +208,8 @@ inline void window_mf_ClearAll(windows_t * windows) {
 
 int8_t window_Init(windows_t * windows) {
 
+	windows->Status.Framing = 0;
+
 	windows->Mainframe.Ping = wucy_hal_Malloc(MALLOC_SPECIALIZED_DMA, DISP_FRAMEBUFF_SIZE);
 	windows->Mainframe.Pong = wucy_hal_Malloc(MALLOC_SPECIALIZED_DMA, DISP_FRAMEBUFF_SIZE);
 	windows->Mainframe.geo.x = 0;
@@ -121,6 +231,8 @@ int8_t window_Init(windows_t * windows) {
 
 int8_t window_DeInit(windows_t * windows) {
 
+	windows->Status.Framing = 0;
+
 	free(windows->Mainframe.Ping);
 	free(windows->Mainframe.Pong);
 
@@ -131,19 +243,20 @@ int8_t window_DeInit(windows_t * windows) {
 
 
 
+/*
 uint8_t window_NewFrame(windows_t * windows) {
 
 	static uint8_t prevState = PING_SEND_PONG_DRAW;
 
-	/* display state is flipped when frame buffer transmission finishes */
+	 display state is flipped when frame buffer transmission finishes
 	if(prevState != windows->Mainframe.State) {
 
 		prevState = windows->Mainframe.State;
 
-		return 1; /* success: new frame began rendering on display */
+		return 1;  success: new frame began rendering on display
 	}
 
-	return 0; /* error: previous frame rendering not yet finished */
+	return 0;  error: previous frame rendering not yet finished
 }
 
 
@@ -152,15 +265,16 @@ void window_UpdateAll(windows_t * windows){
 
 	windows->Mainframe.State = !windows->Mainframe.State;
 
-	window_LayerWindows(windows);
+	window_Layering(windows);
 	wucy_disp_RenderNewFrame((uint8_t *)VRAM_SEND);
 
 }
+*/
 
 
 
 
-int8_t window_Create(windows_t * windows, window_t * wnd,
+int8_t window_Create(windows_t * windows, window_t * wnd,  wnd_fcn_t WndDrawFcn,
 		layer_e layer, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h){
 
 	wnd->FrameBuff = wucy_hal_Malloc(MALLOC_SIMPLE, w * h * DISP_PIXEL_SIZE);
@@ -174,6 +288,9 @@ int8_t window_Create(windows_t * windows, window_t * wnd,
 	wnd->geo.w = w;
 	wnd->geo.h = h;
 	wnd->layer = layer;
+
+	wnd->RedrawCondition = 1;
+	wnd->RedrawFcn = WndDrawFcn;
 
 	if(windows->List.tqh_first == NULL) {
 
@@ -210,6 +327,14 @@ int8_t window_Delete(windows_t * windows, window_t * wnd){
 	memset(wnd, 0x00, sizeof(window_t));
 
 	return 1;
+}
+
+
+
+void window_RedrawRequest(window_t * wnd) {
+
+	wnd->RedrawCondition = 1;
+
 }
 
 

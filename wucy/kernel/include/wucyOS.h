@@ -35,6 +35,7 @@
 #include "wucy_config.h"
 
 #define WUCY_OS
+#define WUCY_OPTIMIZE
 
 #define DISP_WIDTH 128
 #define DISP_HEIGHT 128
@@ -57,6 +58,15 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/timers.h"
+
+typedef enum{
+
+	WUCY_USER_TASK_MAX_PRIOR = configMAX_PRIORITIES - 3,
+
+	WUCY_WNDS_LAYER_TASK_PRIOR = configMAX_PRIORITIES - 2,
+	WUCY_WNDS_FRAME_TASK_PRIOR = configMAX_PRIORITIES - 1,
+
+}WUCY_RTOS_TASK_PRIORITES;
 
 /* wucy integrated custom modules */
 
@@ -95,13 +105,18 @@ pixel_vram_t wucy_disp_HEXcolor2DispPixelData(uint32_t hexColor);
 //								window/GFX module
 //  ===========================================================================
 
+int8_t wucy_wnd_FramingStart(uint8_t fps);
+int8_t wucy_wnd_FramingStop(void);
+
 void wucy_wnd_MainframeSetAll(void);
 void wucy_wnd_MainframeClearAll(void);
 int8_t wucy_wnd_Init(void);
 int8_t wucy_wnd_DeInit(void);
+/*
 uint8_t wucy_wnd_NewFrame(void);
 void wucy_wnd_RenderFrame(void);
-int8_t wucy_wnd_Create(window_t * wnd, layer_e layer, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h);
+*/
+int8_t wucy_wnd_Create(window_t * wnd, wnd_fcn_t WndDrawFcn, layer_e layer, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h);
 int8_t wucy_wnd_Delete(window_t * wnd);
 void wucy_wnd_PixelSet(window_t * wnd, gfx_pos_t x, gfx_pos_t y, pixel_vram_t data);
 pixel_vram_t wucy_wnd_PixelGet(window_t * wnd, gfx_pos_t x, gfx_pos_t y);

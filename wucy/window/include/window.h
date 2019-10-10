@@ -41,6 +41,8 @@ typedef uint16_t pixelData_t;
 /* pixel coordinate on the display type */
 typedef int16_t gfx_pos_t;
 
+typedef void (*wnd_fcn_t)( void * );
+
 typedef struct{
 
 	gfx_pos_t x; /* x position on display (reference to left edge of frame) */
@@ -66,12 +68,19 @@ typedef struct Window {
 	and in front of lower priority frames */
 	pixelData_t * FrameBuff;
 
+	uint8_t RedrawCondition:1;
+	wnd_fcn_t RedrawFcn;
+
     TAILQ_ENTRY(Window) Windows;
 
 }window_t;
 
 
 #ifdef WINDOW_PRIV_ACCESS
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/timers.h"
 
 typedef TAILQ_HEAD(, Window) windowsList_t;
 typedef struct{
@@ -88,13 +97,44 @@ typedef struct{
 
 typedef struct{
 
+	uint8_t Framing:1;
+	uint8_t FirstFrame:1;
+	uint8_t NewFrameReady:1;
+
+	TimerHandle_t 	FPSLimiter_th;
+
+	uint8_t LayeringDone:1;
+	uint8_t TransmissionDone:1;
+
+}wnd_state_t;
+
+typedef enum{ FPS_LIMITER_RESET = 0,
+	FPS_LIMITER_ELAPSED}fps_limiter_e;
+
+typedef struct{
+
+	uint8_t Fps;
+
+}wnd_config_t;
+
+typedef struct{
+
 	windowsList_t 	List;
 	mainframe_t 	Mainframe; 	/* full frame data buffer */
+	wnd_state_t 	Status;
+	wnd_config_t 	Config;
+
+	wnd_fcn_t LayeringTask;
+	wnd_fcn_t FramingTask;
+
 
 }windows_t;
 
 #define VRAM_DRAW (!windows->Mainframe.State ? windows->Mainframe.Pong : windows->Mainframe.Ping)
 #define VRAM_SEND ( windows->Mainframe.State ? windows->Mainframe.Pong : windows->Mainframe.Ping)
+
+int8_t window_FramingStart(windows_t * windows, uint8_t fps);
+int8_t window_FramingStop(windows_t * windows);
 
 void window_mf_SetAll(windows_t * windows);
 void window_mf_ClearAll(windows_t * windows);
@@ -102,12 +142,9 @@ void window_mf_ClearAll(windows_t * windows);
 int8_t window_Init(windows_t * windows);
 int8_t window_DeInit(windows_t * windows);
 
-uint8_t window_NewFrame(windows_t * windows);
-void window_UpdateAll(windows_t * windows);
-
-
-int8_t window_Create(windows_t * windows, window_t * wnd, layer_e layer, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h);
+int8_t window_Create(windows_t * windows, window_t * wnd, wnd_fcn_t WndDrawFcn, layer_e layer, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h);
 int8_t window_Delete(windows_t * windows, window_t * wnd);
+void window_RedrawRequest(window_t * wnd);
 
 void window_PixelSet(window_t * wnd, gfx_pos_t x, gfx_pos_t y, pixelData_t data);
 pixelData_t window_PixelGet(window_t * wnd, gfx_pos_t x, gfx_pos_t y);

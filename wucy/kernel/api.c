@@ -112,6 +112,15 @@ inline pixel_vram_t wucy_disp_HEXcolor2DispPixelData(uint32_t hexColor) {
 //								window module
 //  ===========================================================================
 
+
+int8_t wucy_wnd_FramingStart(uint8_t fps) {
+	return window_FramingStart(&Windows, fps);
+}
+
+int8_t wucy_wnd_FramingStop(void) {
+	return window_FramingStop(&Windows);
+}
+
 inline void wucy_wnd_MainframeSetAll(void) {
 	window_mf_SetAll(&Windows);
 }
@@ -127,22 +136,17 @@ inline int8_t wucy_wnd_DeInit(void) {
 	return window_DeInit(&Windows);
 }
 
- //todo IMPORTANT! bad function, replace by proper framing algorithm
-inline uint8_t wucy_wnd_NewFrame(void) {
-	return window_NewFrame(&Windows);
-}
-
-inline void wucy_wnd_RenderFrame(void) {
-	window_UpdateAll(&Windows);
-}
-
-inline int8_t wucy_wnd_Create(window_t * wnd, layer_e layer,
+inline int8_t wucy_wnd_Create(window_t * wnd, wnd_fcn_t WndDrawFcn, layer_e layer,
 		gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h) {
-	return window_Create(&Windows, wnd, layer, x, y, w, h);
+	return window_Create(&Windows, wnd, WndDrawFcn, layer, x, y, w, h);
 }
 
 inline int8_t wucy_wnd_Delete(window_t * wnd) {
 	return window_Delete(&Windows, wnd);
+}
+
+inline void wucy_wnd_RedrawRequest(window_t * wnd) {
+	window_RedrawRequest(wnd);
 }
 
 inline void wucy_wnd_PixelSet(window_t * wnd,

@@ -38,6 +38,7 @@
 #define RGB_STATE_HOLD_HIGH 255
 
 
+	window_t SquareTest, blob;
 c_hex_t color = 0;
 
 
@@ -71,20 +72,42 @@ void rotation(void * p){
 		islow += 6.28 / 5000;
 		if(islow > 6.28)islow -= 6.28;
 
-		vTaskDelay(1);
+		vTaskDelay(1 + 0 / portTICK_PERIOD_MS);
 
 
 	}
 }
 
-static void testFill(void *p){
+static void SquareTestDraw(void * p) {
 
-	wucy_wnd_MainframeClearAll();
 
-	window_t SquareTest, blob;
+	wucy_hal_PinWrite(25, 1);
 
-	wucy_wnd_Create(&SquareTest, 2, 0, 0, 128, 128);
-	wucy_wnd_Create(&blob, 1, 0, 0, 128, 128);
+	wucy_wnd_SetPosition(&SquareTest, 32 + sin(islow)*32, 32 + sin(islow)*32);
+	//ssd1351_Window_SetDimensions(&SquareTest, 64 + cos(islow)*32, 64 + cos(islow)*32);
+	wucy_gfx_ClearAll(&SquareTest);
+
+	//gfx_draw_Box(&window, 0x000000, REF_BOTTOM_L,  0, 0, 128, 128);
+	/*todo make first gfx wnd parameter automatic from layering sequence */
+	wucy_gfx_DrawBox(&SquareTest, 0xFF0000, REF_BOTTOM_L, 	0, 				0, 				10, 10); 		// 	bottom left - RED
+	wucy_gfx_DrawBox(&SquareTest, 0x00FF00, REF_BOTTOM_R, 	DISP_RANGE_H, 	0, 				10, 10); 		//	bottom right - GREEN
+	wucy_gfx_DrawBox(&SquareTest, 0x0000FF, REF_TOP_L, 		0, 				DISP_RANGE_W, 	10, 10); 		//	top left - BLUE
+	wucy_gfx_DrawBox(&SquareTest, 0xFF00FF, REF_TOP_R, 		DISP_RANGE_H, 	DISP_RANGE_W, 	10, 10); 		//	top right - PURPLE
+
+	float ii = i;
+
+	for(int16_t d = 4; d <= 64; d +=6){
+
+		wucy_gfx_DrawRect(&SquareTest, color, REF_CENTER, 64 + cos(ii)*32, 64 + sin(ii)*32, d, d);
+	}
+
+	wucy_gfx_DrawWindowFrame(&SquareTest, COLOR_TEAL, 2);
+
+	wucy_hal_PinWrite(25, 0);
+
+}
+
+static void blobDraw(void * p) {
 
 	wucy_gfx_ClearAll(&blob);
 
@@ -95,43 +118,16 @@ static void testFill(void *p){
 			wucy_gfx_DrawRect(&blob, COLOR_YELLOW, REF_BOTTOM_L, x, y, 8, 8);
 		}
 	}
-
-	while(1){
-
-		if(wucy_wnd_NewFrame()) {
-
-			wucy_hal_PinWrite(25, 1);
-
-			wucy_wnd_SetPosition(&SquareTest, 32 + sin(islow)*32, 32 + sin(islow)*32);
-			//ssd1351_Window_SetDimensions(&SquareTest, 64 + cos(islow)*32, 64 + cos(islow)*32);
-			wucy_gfx_ClearAll(&SquareTest);
-
-			//gfx_draw_Box(&window, 0x000000, REF_BOTTOM_L,  0, 0, 128, 128);
-
-			wucy_gfx_DrawBox(&SquareTest, 0xFF0000, REF_BOTTOM_L, 	0, 				0, 				10, 10); 		// 	bottom left - RED
-			wucy_gfx_DrawBox(&SquareTest, 0x00FF00, REF_BOTTOM_R, 	DISP_RANGE_H, 	0, 				10, 10); 		//	bottom right - GREEN
-			wucy_gfx_DrawBox(&SquareTest, 0x0000FF, REF_TOP_L, 		0, 				DISP_RANGE_W, 	10, 10); 		//	top left - BLUE
-			wucy_gfx_DrawBox(&SquareTest, 0xFF00FF, REF_TOP_R, 		DISP_RANGE_H, 	DISP_RANGE_W, 	10, 10); 		//	top right - PURPLE
-
-			float ii = i;
-
-			for(int16_t d = 4; d <= 64; d +=6){
-
-				wucy_gfx_DrawRect(&SquareTest, color, REF_CENTER, 64 + cos(ii)*32, 64 + sin(ii)*32, d, d);
-			}
-
-			wucy_gfx_DrawWindowFrame(&SquareTest, COLOR_TEAL, 2);
-
-			wucy_hal_PinWrite(25, 0);
-		}
-		vTaskDelay(1);
-	}
 }
+
 
 void wucy_UI_Init(void) {
 
-	xTaskCreate(testFill, "testFill", 1024, NULL, configMAX_PRIORITIES - 2, NULL);
-	xTaskCreate(rotation, "rotation", 1024, NULL, configMAX_PRIORITIES - 1, NULL);
+	wucy_wnd_Create(&SquareTest, SquareTestDraw, 2, 0, 0, 128, 128);
+	wucy_wnd_Create(&blob, blobDraw, 1, 0, 0, 128, 128);
+
+	xTaskCreate(rotation, "rotation", 1024, NULL, WUCY_USER_TASK_MAX_PRIOR - 3, NULL);
+
 
 }
 
