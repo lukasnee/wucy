@@ -291,11 +291,10 @@ inline void wucy_hal_SPI_Transmit(uint8_t * data, uint32_t size, uint8_t dc) {
 
 	/* USER CODE START */
 
-
 	memset(&spi_transaction, 0, sizeof(spi_transaction));       		/* Clean transaction structure */
 	spi_transaction.length = size * 8;            						/* bytes to transmit (in bits). */
 	spi_transaction.tx_buffer = data;              						/* data buffer to transmit */
-	spi_transaction.user = (void*)(dc);									/* Pass CD level so the transmit callback would set it accordingly  */
+	spi_transaction.user = (void*)dc;								/* Pass CD level so the transmit callback would set it accordingly  */
 
 	retval = spi_device_transmit(spi_oled, &spi_transaction);			/* Begin transmission */
 	//retval = spi_device_polling_transmit(spi_oled, &spi_transaction);

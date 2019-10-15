@@ -31,7 +31,9 @@
 
 #include "ui.h"
 
-void wucy_Start(void){
+void wucy_sys_Init(void * p) {
+
+	//wucy_hal_DelayMs(1000);
 
 	/* for debug */
 	wucy_hal_PinOutputInit(25);
@@ -39,18 +41,19 @@ void wucy_Start(void){
 	wucy_hal_PinOutputInit(27);
 
 	wucy_disp_Init();
+
 	wucy_wnd_Init();
 
+	wucy_ui_Init();
 
-	wucy_UI_Init();
+	wucy_wnd_FramingStart(45);
 
-	wucy_wnd_FramingStart(30);
+	vTaskDelete(NULL);
+}
 
-	/* todo only works if task scheduler is already running and
-	 * this function is inside a task. Need to create a specific kernel task */
-	while(1){
+void wucy_Start(void){
 
-		vTaskDelay(1000 / portTICK_PERIOD_MS);
-	}
+	xTaskCreate(wucy_sys_Init, "sys_init\0", 1024*3, NULL, WUCY_KERNEL_MAX_PRIOR, NULL);
+
 }
 

@@ -34,7 +34,7 @@
 #include <string.h>
 #include <math.h>
 
-void wucy_UI_Init(void);
+void wucy_ui_Init(void);
 
 
 

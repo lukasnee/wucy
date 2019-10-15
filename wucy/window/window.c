@@ -42,6 +42,8 @@ static void window_mf_SetPixel(windows_t * windows,
 	}
 }
 
+
+
 static pixelData_t window_mf_GetPixel(windows_t * windows, gfx_pos_t x, gfx_pos_t y) {
 
 	if(x >= 0 && y >= 0 && x < windows->Mainframe.geo.w && y < windows->Mainframe.geo.h) {
@@ -67,14 +69,15 @@ static void window_Layering(windows_t * windows) {
 			if(wndCur->RedrawCondition) {
 
 				wndCur->RedrawFcn(NULL);
+				wndCur->RedrawCondition = 0;
 			}
 
 			for(gfx_pos_t y_wnd = 0, y_mf = wndCur->geo.y;
-					y_mf < wndCur->geo.y + (wndCur->geo.h > DISP_HEIGHT ? DISP_HEIGHT : wndCur->geo.h);
+					y_mf < (wndCur->geo.y + ((wndCur->geo.h > DISP_HEIGHT) ? DISP_HEIGHT : wndCur->geo.h));
 					y_mf++) {
 
 				for(gfx_pos_t x_wnd = 0, x_mf = wndCur->geo.x;
-						x_mf < wndCur->geo.x + (wndCur->geo.w > DISP_WIDTH ? DISP_WIDTH : wndCur->geo.w);
+						x_mf < (wndCur->geo.x + ((wndCur->geo.w > DISP_WIDTH) ? DISP_WIDTH : wndCur->geo.w));
 						x_mf++) {
 
 					window_mf_SetPixel(windows, x_mf, y_mf, wucy_wnd_PixelGet(wndCur, x_wnd, y_wnd));
@@ -85,8 +88,49 @@ static void window_Layering(windows_t * windows) {
 				y_wnd++;
 			}
 		}
+
 		windows->Status.LayeringDone = 1;
+		vTaskResume(windows->FramingTask.Handler);
+
+		wucy_hal_PinWrite(25, 0);
 		vTaskSuspend(NULL);
+		wucy_hal_PinWrite(25, 1);
+
+	}
+	vTaskDelete(NULL);
+}
+
+
+
+static void window_Rendering(windows_t * windows) {
+
+	while(windows->Status.Framing) {
+
+		/* begin timer for limiter */
+		wucy_hal_PinWrite(27, 0);
+		if(xTimerIsTimerActive(windows->Status.FPSLimiter_th) == pdFALSE)
+			xTimerStart(windows->Status.FPSLimiter_th, 0);
+
+		/* begin transmission */
+		wucy_disp_RenderNewFrame((uint8_t *)VRAM_SEND);
+		/*
+		 * ...
+		 *
+		 * task idles here until transmission is finished
+		 *
+		 * ...
+		 *
+		 */
+
+		windows->Status.TransmissionDone = 1;
+		vTaskResume(windows->FramingTask.Handler);
+
+		if(windows->Status.FpsLimterAllows)
+			vTaskDelay(5);
+
+		wucy_hal_PinWrite(26, 0);
+		vTaskSuspend(NULL);
+		wucy_hal_PinWrite(26, 1);
 	}
 	vTaskDelete(NULL);
 }
@@ -98,56 +142,46 @@ static void window_Framing(windows_t * windows) {
 	while(windows->Status.Framing) {
 
 		if (windows->Status.FirstFrame
-			|| ( windows->Status.LayeringDone && windows->Status.TransmissionDone &&
-					(fps_limiter_e)pvTimerGetTimerID(windows->Status.FPSLimiter_th) == FPS_LIMITER_ELAPSED
-				)
-			) {
+				|| ( windows->Status.LayeringDone &&
+					windows->Status.TransmissionDone &&
+					windows->Status.FpsLimterAllows)
+					) {
 
 			windows->Status.FirstFrame = 0;
-			windows->Status.NewFrameReady = 1;
 
-			/* reset frame completion */
+			/* reset framing condition flags */
 			windows->Status.LayeringDone = 0;
 			windows->Status.TransmissionDone = 0;
-			vTimerSetTimerID(windows->Status.FPSLimiter_th, (void *) FPS_LIMITER_RESET);
+			windows->Status.FpsLimterAllows = 0;
 
 			/* switch frame buffer state */
 			windows->Mainframe.State = !windows->Mainframe.State;
-
-			/* begin timer for limiter */
-			xTimerStart(windows->Status.FPSLimiter_th, 0);
 
 			/* Before rendering new frame to display,
 			 * enable layering task which has lower priority by a single step.
 			 * Eventualy current task will pause on transmission and pass on to layering task */
 
-			vTaskResume(windows->LayeringTask);
-
-			/* begin transmission */
-			wucy_disp_RenderNewFrame((uint8_t *)VRAM_SEND);
-
-			/*
-			 * ...
-			 *
-			 * task stops here until transmission is finished
-			 *
-			 * ...
-			 *
-			 */
-
-			windows->Status.TransmissionDone = 1;
+			vTaskResume(windows->RenderingTask.Handler);
+			vTaskResume(windows->LayeringTask.Handler);
 
 		}
 
-		vTaskDelay(1);
+		vTaskSuspend(NULL);
+
 	}
 	vTaskDelete(NULL);
 }
 
 
+
 static void window_FPSLimiterCallback(TimerHandle_t xTimer) {
 
-	vTimerSetTimerID(xTimer, (void *) FPS_LIMITER_ELAPSED);
+	wucy_hal_PinWrite(27, 1);
+	windows_t * windows = pvTimerGetTimerID(xTimer);
+	windows->Status.FpsLimterAllows = 1;
+
+	if (eTaskGetState(windows->FramingTask.Handler) == eSuspended)
+		vTaskResume(windows->FramingTask.Handler);
 }
 
 
@@ -155,22 +189,26 @@ static void window_FPSLimiterCallback(TimerHandle_t xTimer) {
 
 int8_t window_FramingStart(windows_t * windows, uint8_t fps) {
 
+	//window_FramingStop(windows); /* clean windows framing handle */
+
 	windows->Status.Framing = 1;
 	windows->Status.FirstFrame = 1;
-	windows->Config.Fps = fps;
+	windows->Config.Fps = fps ? fps : DISP_MAX_AVAILABLE_FPS;
 
-	vTimerSetTimerID(windows->Status.FPSLimiter_th, FPS_LIMITER_RESET);
 	windows->Status.FPSLimiter_th = xTimerCreate("FPSLimiter\0",
-			1000 / fps / portTICK_PERIOD_MS, pdFALSE, 0, window_FPSLimiterCallback);
-	xTimerStart(windows->Status.FPSLimiter_th, 0);
+			1000 / windows->Config.Fps / portTICK_PERIOD_MS, pdFALSE, 0, window_FPSLimiterCallback);
 
-	windows->FramingTask = (void (*)(void *))window_Framing;
-	windows->LayeringTask = (void (*)(void *))window_Layering;
+	vTimerSetTimerID(windows->Status.FPSLimiter_th, windows);
 
-	xTaskCreate((void (*)(void *))window_Framing, "wnds_frm\0", 1024, windows, WUCY_WNDS_FRAME_TASK_PRIOR, NULL);
-	xTaskCreate((void (*)(void *))window_Layering, "wnds_lyr\0", 1024, windows, WUCY_WNDS_LAYER_TASK_PRIOR, NULL);
+	windows->LayeringTask.Fcn = (void (*)(void *))window_Layering;
+	windows->RenderingTask.Fcn = (void (*)(void *))window_Rendering;
+	windows->FramingTask.Fcn = (void (*)(void *))window_Framing;
 
-
+	xTaskCreate(windows->LayeringTask.Fcn, "wnds_lyr\0", 1024, windows, WUCY_WNDS_LAYER_TASK_PRIOR, &(windows->LayeringTask.Handler));
+	vTaskSuspend(windows->LayeringTask.Handler);
+	xTaskCreate(windows->RenderingTask.Fcn, "wnds_rndr\0", 1024, windows, WUCY_WNDS_RENDER_TASK_PRIOR, &(windows->RenderingTask.Handler));
+	vTaskSuspend(windows->LayeringTask.Handler);
+	xTaskCreate(windows->FramingTask.Fcn, "wnds_frm\0", 1024, windows, WUCY_WNDS_FRAME_TASK_PRIOR, &(windows->FramingTask.Handler));
 	return 0; /* success */
 }
 
@@ -179,8 +217,11 @@ int8_t window_FramingStart(windows_t * windows, uint8_t fps) {
 int8_t window_FramingStop(windows_t * windows) {
 
 	xTimerDelete(windows->Status.FPSLimiter_th, 0);
-	vTaskDelete(windows->FramingTask);
-	vTaskDelete(windows->LayeringTask);
+	vTaskDelete(windows->FramingTask.Handler);
+	vTaskDelete(windows->LayeringTask.Handler);
+	vTaskDelete(windows->RenderingTask.Handler);
+
+	windows->Status.Framing = 0;
 
 	memset(&(windows->Status), 0x00, sizeof(wnd_state_t));
 
@@ -191,7 +232,7 @@ int8_t window_FramingStop(windows_t * windows) {
 
 inline void window_mf_SetAll(windows_t * windows) {
 
-	memset(VRAM_DRAW, 0xFF, DISP_FRAMEBUFF_SIZE);
+	memset((uint8_t*)VRAM_DRAW, 0xFF, DISP_FRAMEBUFF_SIZE);
 
 }
 
@@ -199,7 +240,7 @@ inline void window_mf_SetAll(windows_t * windows) {
 
 inline void window_mf_ClearAll(windows_t * windows) {
 
-	memset(VRAM_DRAW, 0x00, DISP_FRAMEBUFF_SIZE);
+	memset((uint8_t*)VRAM_DRAW, 0x00, DISP_FRAMEBUFF_SIZE);
 
 }
 

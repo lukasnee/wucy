@@ -124,11 +124,8 @@ static void ssd1351_SendCommand(ssd1351_t * disp, cmd_list_t * command_list) {
 
 #ifdef WUCY_OPTIMIZE
 
-
 void ssd1351_SendData(ssd1351_t * disp,
 		uint8_t * data, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2) {
-
-	uint32_t data_size;
 
 		uint8_t pre_vram_dump[] = {
 			SSD1351_CMD_SET_ADDRESS_COLUMN, 2, x1, x2, //0x7F -SSD1351_RANGE_H */
@@ -186,6 +183,7 @@ int8_t ssd1351_InitViaSPI(ssd1351_t * disp, ssd1351_spi_t * interface) {
 		wucy_hal_PinOutputInit(disp->Pin.SPI->EN);
 
 		wucy_hal_SPI_Init();
+
 
 		disp->Status.Init = INITIALIZED;
 
@@ -266,7 +264,7 @@ void ssd1351_PowerOff(ssd1351_t * disp){
 	}
 }
 
-inline void ssd1351_DisplayMode(ssd1351_t * disp, display_mode_e mode){
+void ssd1351_DisplayMode(ssd1351_t * disp, display_mode_e mode){
 
 	cmd_list_t cmd[] = {mode, 0, CMD_LIST_TERMINATE};
 	ssd1351_SendCommand(disp, cmd);
@@ -274,7 +272,7 @@ inline void ssd1351_DisplayMode(ssd1351_t * disp, display_mode_e mode){
 }
 
 
-inline void ssd1351_Sleep(ssd1351_t * disp, sleep_mode_e mode){
+void ssd1351_Sleep(ssd1351_t * disp, sleep_mode_e mode){
 
 	/*  todo SSD1351_CMD_FUNCTION_SELECT (0xAB) data byte must be merged
 	 *  with interface selection bits A[7:6] if 16 - bit parallel port used,

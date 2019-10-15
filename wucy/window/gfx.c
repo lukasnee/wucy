@@ -56,6 +56,25 @@ const c_hex_t colorPalette16[16] = {
 
 };
 
+const c_hex_t colorPalette14[14] = {
+
+	COLOR_AQUA,
+	COLOR_BLUE,
+	COLOR_FUCHSIA,
+	COLOR_GRAY,
+	COLOR_GREEN,
+	COLOR_LIME,
+	COLOR_MAROON,
+	COLOR_NAVY,
+	COLOR_OLIVE,
+	COLOR_PURPLE,
+	COLOR_RED,
+	COLOR_SILVER,
+	COLOR_TEAL,
+	COLOR_YELLOW
+
+};
+
 static gfx_geo_t gfx_AdjustRectRef(gfx_ref_e ref, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h) {
 
 	gfx_geo_t geo;
@@ -108,13 +127,13 @@ static gfx_geo_t gfx_AdjustRectRef(gfx_ref_e ref, gfx_pos_t x, gfx_pos_t y, gfx_
 
 inline void gfx_SetAll(window_t * wnd) {
 
-	memset(wnd->FrameBuff, 0xFF, wnd->geo.w * wnd->geo.h * DISP_PIXEL_SIZE);
+	memset((uint8_t*)wnd->FrameBuff, 0xFF, wnd->geo.w * wnd->geo.h * DISP_PIXEL_SIZE);
 
 }
 
 inline void gfx_ClearAll(window_t * wnd) {
 
-	memset(wnd->FrameBuff, 0x00, wnd->geo.w * wnd->geo.h * DISP_PIXEL_SIZE);
+	memset((uint8_t*)wnd->FrameBuff, 0x00, wnd->geo.w * wnd->geo.h * DISP_PIXEL_SIZE);
 
 }
 

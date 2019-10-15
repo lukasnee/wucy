@@ -59,14 +59,25 @@
 #include "freertos/task.h"
 #include "freertos/timers.h"
 
+
+
 typedef enum{
 
-	WUCY_USER_TASK_MAX_PRIOR = configMAX_PRIORITIES - 3,
+    WUCY_KERNEL_MAX_PRIOR = 10,
 
-	WUCY_WNDS_LAYER_TASK_PRIOR = configMAX_PRIORITIES - 2,
-	WUCY_WNDS_FRAME_TASK_PRIOR = configMAX_PRIORITIES - 1,
+	WUCY_PRIOR_HIGHEST = WUCY_KERNEL_MAX_PRIOR - 3,
+	WUCY_PRIOR_HIGH = WUCY_PRIOR_HIGHEST- 1,
+	WUCY_PRIOR_NORMAL = WUCY_PRIOR_HIGH - 1,
+	WUCY_PRIOR_LOW = WUCY_PRIOR_NORMAL - 1,
+	WUCY_PRIOR_LOWEST = WUCY_PRIOR_LOW - 1,
+
+	WUCY_WNDS_RENDER_TASK_PRIOR = WUCY_KERNEL_MAX_PRIOR - 1,
+	WUCY_WNDS_FRAME_TASK_PRIOR = WUCY_KERNEL_MAX_PRIOR - 1,
+	WUCY_WNDS_LAYER_TASK_PRIOR = WUCY_KERNEL_MAX_PRIOR - 1,
+
 
 }WUCY_RTOS_TASK_PRIORITES;
+
 
 /* wucy integrated custom modules */
 
@@ -79,6 +90,8 @@ typedef enum{
 #include "window.h"
 #include "gfx.h"
 #include "ssd1351.h"
+
+#include "ui.h"
 
 // ============================================================================
 //								display driver module
@@ -118,6 +131,7 @@ void wucy_wnd_RenderFrame(void);
 */
 int8_t wucy_wnd_Create(window_t * wnd, wnd_fcn_t WndDrawFcn, layer_e layer, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h);
 int8_t wucy_wnd_Delete(window_t * wnd);
+void wucy_wnd_RedrawRequest(window_t * wnd);
 void wucy_wnd_PixelSet(window_t * wnd, gfx_pos_t x, gfx_pos_t y, pixel_vram_t data);
 pixel_vram_t wucy_wnd_PixelGet(window_t * wnd, gfx_pos_t x, gfx_pos_t y);
 void wucy_wnd_SetPosition(window_t * wnd, gfx_pos_t x, gfx_pos_t y);

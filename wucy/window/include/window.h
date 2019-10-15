@@ -87,8 +87,8 @@ typedef struct{
 
 	gfx_geo_t geo; /* geometry */
 
-	uint8_t * Ping;	/* buffer 1 */
-	uint8_t * Pong;	/* buffer 2 */
+	pixelData_t * Ping;	/* buffer 1 */
+	pixelData_t * Pong;	/* buffer 2 */
 
 	enum{ PING_DRAW_PONG_SEND,
 		PING_SEND_PONG_DRAW} State:1;
@@ -99,12 +99,12 @@ typedef struct{
 
 	uint8_t Framing:1;
 	uint8_t FirstFrame:1;
-	uint8_t NewFrameReady:1;
 
 	TimerHandle_t 	FPSLimiter_th;
 
 	uint8_t LayeringDone:1;
 	uint8_t TransmissionDone:1;
+	uint8_t FpsLimterAllows:1;
 
 }wnd_state_t;
 
@@ -119,14 +119,21 @@ typedef struct{
 
 typedef struct{
 
+	wnd_fcn_t Fcn;
+	TaskHandle_t Handler;
+
+}wnds_task_t;
+
+typedef struct{
+
 	windowsList_t 	List;
 	mainframe_t 	Mainframe; 	/* full frame data buffer */
 	wnd_state_t 	Status;
 	wnd_config_t 	Config;
 
-	wnd_fcn_t LayeringTask;
-	wnd_fcn_t FramingTask;
-
+	wnds_task_t LayeringTask;
+	wnds_task_t FramingTask;
+	wnds_task_t RenderingTask;
 
 }windows_t;
 
@@ -144,6 +151,7 @@ int8_t window_DeInit(windows_t * windows);
 
 int8_t window_Create(windows_t * windows, window_t * wnd, wnd_fcn_t WndDrawFcn, layer_e layer, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h);
 int8_t window_Delete(windows_t * windows, window_t * wnd);
+
 void window_RedrawRequest(window_t * wnd);
 
 void window_PixelSet(window_t * wnd, gfx_pos_t x, gfx_pos_t y, pixelData_t data);

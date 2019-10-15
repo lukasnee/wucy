@@ -55,6 +55,7 @@ typedef enum{
 }c_hex_t;
 
 const c_hex_t colorPalette16[16];
+const c_hex_t colorPalette14[14];
 
 typedef enum{
 

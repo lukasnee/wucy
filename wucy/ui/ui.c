@@ -43,12 +43,15 @@ c_hex_t color = 0;
 
 
 float i = 0.0, islow = 0.0;
+uint8_t lvl = 0;
 
 void rotation(void * p){
 
 
 	while(1){
 
+
+		wucy_wnd_RedrawRequest(&SquareTest);
 
 		static uint16_t colorTick = 0, cp = 0;
 
@@ -58,14 +61,17 @@ void rotation(void * p){
 
 			colorTick = 0;
 
-			color = colorPalette16[cp++];
-			if(cp >= 16)
+			color = colorPalette14[cp++];
+			if(cp >= 14)
 				cp = 0;
 
 		}
 
 		i += 6.28 / 1000;
-		if(i > 6.28)i -= 6.28;
+		if(i > 6.28) {
+
+			i -= 6.28;
+		}
 
 
 
@@ -74,14 +80,11 @@ void rotation(void * p){
 
 		vTaskDelay(1 + 0 / portTICK_PERIOD_MS);
 
-
 	}
 }
 
 static void SquareTestDraw(void * p) {
 
-
-	wucy_hal_PinWrite(25, 1);
 
 	wucy_wnd_SetPosition(&SquareTest, 32 + sin(islow)*32, 32 + sin(islow)*32);
 	//ssd1351_Window_SetDimensions(&SquareTest, 64 + cos(islow)*32, 64 + cos(islow)*32);
@@ -103,8 +106,6 @@ static void SquareTestDraw(void * p) {
 
 	wucy_gfx_DrawWindowFrame(&SquareTest, COLOR_TEAL, 2);
 
-	wucy_hal_PinWrite(25, 0);
-
 }
 
 static void blobDraw(void * p) {
@@ -121,12 +122,12 @@ static void blobDraw(void * p) {
 }
 
 
-void wucy_UI_Init(void) {
+void wucy_ui_Init(void) {
 
 	wucy_wnd_Create(&SquareTest, SquareTestDraw, 2, 0, 0, 128, 128);
 	wucy_wnd_Create(&blob, blobDraw, 1, 0, 0, 128, 128);
 
-	xTaskCreate(rotation, "rotation", 1024, NULL, WUCY_USER_TASK_MAX_PRIOR - 3, NULL);
+	xTaskCreate(rotation, "rotation", 1024, NULL, WUCY_PRIOR_HIGHEST - 3, NULL);
 
 
 }
