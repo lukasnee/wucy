@@ -65,7 +65,7 @@ Hardware licensing will come into consideration later, currently I don't have an
 
 Take everything with a grain of salt, I'm an inexperienced engineer, still a student. Honestly, I don't really know what I'm doing. I just have this idea in my mind and I want to make it somewhat real. I thinks it is quite cool.
 
-Some of my inspirations: 
+Some of my work inspirations: 
 Zak Kemble's N|Watch; Pebble watch; 
 Unexpected maker, Steve Wozniak, Linus Torvalds, Mohit Bhoite.
 
