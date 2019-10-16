@@ -47,6 +47,9 @@ Very much a work in progress. Nothing really works as a whole. I have written a 
 * 2019-10-01
 Drawn a diagram of whone system structure (fig.1), restructuring code.
 
+* 2019-10-15
+Windows framework working - window managing, layering, rendering on screen. Needs optimization.
+
 ### Future ideas
 
 Maybe create a bootloader that could enable loading precompiled applications such as game from SD card storage to RAM and run it within the OS. I have no skill on this, so contact me if you think you can help.
