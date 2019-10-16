@@ -2,7 +2,7 @@
 
 `a watch for nerds`
 
-currently in developement state.
+Currently in developement state.
 
 ### Vision
 
