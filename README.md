@@ -1,6 +1,6 @@
-# WUCY - wearable retro computer  
+# WUCY - Open source wearable retro computer
 
-`Open source watch for nerds.`
+`a watch for nerds`
 
 ### Vision
 
