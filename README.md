@@ -2,6 +2,8 @@
 
 `a watch for nerds`
 
+currently in developement state.
+
 ### Vision
 
 is to create retro watch-like open source wearable computer. Technically you could call this an open source smartwatch, but I don't like the word "smart", in fact - computers are dumb, they do only what's told as long as they're open and only single user is in control. Lets keep it that way. I'd rather want wucy to be _honest_ than _smart_. My plan is to create hardware & software platform, spark a community, have fun and make something special. :)
