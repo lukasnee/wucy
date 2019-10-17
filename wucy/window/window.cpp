@@ -27,10 +27,290 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#define WINDOW_PRIV_ACCESS
-#include "window.h"
+#include "window.hpp"
 
 #include "wucyOS.h"
+
+#include "Adafruit_GFX.h"
+
+#define swap(a, b) (((a) ^= (b)), ((b) ^= (a)), ((a) ^= (b)))
+
+
+
+const c_hex_t colorPalette16[16] = {
+
+	COLOR_AQUA,
+	COLOR_BLACK,
+	COLOR_BLUE,
+	COLOR_FUCHSIA,
+	COLOR_GRAY,
+	COLOR_GREEN,
+	COLOR_LIME,
+	COLOR_MAROON,
+	COLOR_NAVY,
+	COLOR_OLIVE,
+	COLOR_PURPLE,
+	COLOR_RED,
+	COLOR_SILVER,
+	COLOR_TEAL,
+	COLOR_WHITE,
+	COLOR_YELLOW
+
+};
+
+const c_hex_t colorPalette14[14] = {
+
+	COLOR_AQUA,
+	COLOR_BLUE,
+	COLOR_FUCHSIA,
+	COLOR_GRAY,
+	COLOR_GREEN,
+	COLOR_LIME,
+	COLOR_MAROON,
+	COLOR_NAVY,
+	COLOR_OLIVE,
+	COLOR_PURPLE,
+	COLOR_RED,
+	COLOR_SILVER,
+	COLOR_TEAL,
+	COLOR_YELLOW
+
+};
+
+
+int8_t Window::Window(wnd_fcn_t WndDrawFcn) {
+
+	this->FrameBuff = wucy_hal_Malloc(MALLOC_SIMPLE, w * h * DISP_PIXEL_SIZE);
+
+	if(this->FrameBuff == NULL) {
+		return -1; /* error: heap overflow */
+	}
+
+	/*
+	 * this->SetX(x);
+	this->SetY(y);
+	this->SetW(w);
+	this->SetH(h);
+	this->layer = layer;
+
+	this->RedrawCondition = 1;
+	this->RedrawFcn = WndDrawFcn;
+
+
+	if(windows->List.tqh_first == NULL) {
+
+		TAILQ_INIT(&windows->List);
+
+		TAILQ_INSERT_HEAD(&windows->List, wnd, Windows);
+
+		return 1;  success: inserted at head
+	}
+
+	for (window_t * wndCur = windows->List.tqh_first; wndCur != NULL;
+			wndCur = wndCur->Windows.tqe_next) {
+
+		 sort from lowest to highest head to tail
+		if(this->layer < wndCur->layer) {
+
+			 todo make so it adds before higher layer, after same layer,
+			 * so the same number layers have priority by creation time
+
+			TAILQ_INSERT_BEFORE(wndCur, wnd, Windows);
+			return 2;  success: inserted between head and tail
+		}
+	}
+
+	TAILQ_INSERT_TAIL(&windows->List, wnd, Windows);
+
+	return 3;  success: inserted at tail
+	*/
+
+}
+
+
+
+void Window::~Window(void){
+
+	free(this->FrameBuff);
+}
+
+
+void Window::clearDisplay(void) {
+
+	memset((uint8_t*) this->FrameBuff, 0x00,
+			this->Get_w() * this->Get_h() * DISP_PIXEL_SIZE);
+
+}
+
+
+
+void Window::setDisplay(void) {
+
+	memset((uint8_t*) this->FrameBuff, 0xFF,
+			this->Get_w() * this->Get_h() * DISP_PIXEL_SIZE);
+
+}
+
+
+/* INTENDED FOR SINGLE PIXEL COLORING, INEFFICIENT IF USED TO DRAW GRAPHICS WITH SOLID COLOR.
+ * In this case to be efficient make a temporary pixelData_t variable and declare it with
+ * color_hex2PixelVRAM(color_hex) to prepare formatted VRAM data,
+ * then repeat ssd1351_PixelDataSet() to "draw" multiple pixels.
+ * */
+void Window::drawPixel(int16_t x, int16_t y, uint16_t color) {
+	if ((x >= 0) && (x < width()) && (y >= 0) && (y < height())) {
+		// Pixel is in-bounds. Rotate coordinates if needed.
+		switch (getRotation()) {
+		case 1:
+			swap(x, y);
+			x = WIDTH - x - 1;
+			break;
+		case 2:
+			x = WIDTH - x - 1;
+			y = HEIGHT - y - 1;
+			break;
+		case 3:
+			swap(x, y);
+			y = HEIGHT - y - 1;
+			break;
+		}
+
+		if (x >= 0 && y >= 0 && x < this->Get_w() && y < this->Get_h()) {
+
+			*(this->FrameBuff + this->Get_w() * y + x) = color;
+
+		}
+	}
+}
+
+
+
+void Window::drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color) {
+
+	for(gfx_pos_t xc = x; xc < x + w; xc++) {
+
+		drawPixel(xc, y, color);
+	}
+}
+
+
+
+void Window::drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color) {
+
+	for(gfx_pos_t yc = y; yc < y + h; yc++) {
+
+		drawPixel(x, yc, color);
+	}
+}
+
+
+
+pixelData_t Window::getPixel(int16_t x, int16_t y) {
+
+
+	if(x >= 0 && y >= 0 && x < this->Get_w() && y < this->Get_h()) {
+
+	return *( this->FrameBuff + this->Get_w() * y + x);
+
+	}
+	return 0;
+}
+
+
+int8_t Window::SetDimensions(gfx_pos_t w, gfx_pos_t h) {
+
+
+	free(this->FrameBuff);
+
+	this->FrameBuff = wucy_hal_Malloc(MALLOC_SIMPLE, w * h * DISP_PIXEL_SIZE);
+
+	/* if unable to change buffer dimensions */
+	if(this->FrameBuff == NULL) {
+
+		/* reallocate freed memory buffer*/
+		this->FrameBuff = wucy_hal_Malloc(MALLOC_SIMPLE, this->Get_w() * this->Get_h() * DISP_PIXEL_SIZE);
+
+		/* failed */
+		if(this->FrameBuff == NULL){
+
+			return -2; /* critical error: frame buffer lost */
+		}
+
+		return -1; /* error: new frame buffer dimensions are to high for new buffer allocation */
+	}
+
+	this->SetW(w);
+	this->SetH(h);
+
+	return 1;
+
+}
+
+void Window::drawFrame(uint16_t color, gfx_pos_t thickness) {
+
+	for(gfx_pos_t t = 0; t < thickness; t++) {
+
+		drawRect(t, t, this->Get_w() - t*2, this->Get_h() - t*2, color);
+
+	}
+}
+
+
+
+/*
+Geo Window::AdjustRectRef(gfx_ref_e ref, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h) {
+
+	Geo g;
+
+	switch(ref) {
+
+	case REF_BOTTOM_L:
+
+		 default reference, theres nothing to change
+
+		break;
+
+	case REF_BOTTOM_R:
+
+		x = x - w + 1;
+
+		break;
+
+	case REF_TOP_L:
+
+		y = y - h + 1;
+
+		break;
+
+	case REF_TOP_R:
+
+		x = x - w + 1;
+		y = y - h + 1;
+
+		break;
+
+	case REF_CENTER:
+
+		x-= w/2;
+		y-= h/2;
+
+		break;
+	}
+
+	g.geo_x = x;
+	g.geo_y = y;
+	g.geo_w = w;
+	g.geo_h = h;
+
+	return g;
+}
+*/
+
+
+
+
+
+
 
 static void window_mf_SetPixel(windows_t * windows,
 		gfx_pos_t x, gfx_pos_t y, pixelData_t data) {
@@ -282,169 +562,3 @@ int8_t window_DeInit(windows_t * windows) {
 	return 1;
 }
 
-
-
-/*
-uint8_t window_NewFrame(windows_t * windows) {
-
-	static uint8_t prevState = PING_SEND_PONG_DRAW;
-
-	 display state is flipped when frame buffer transmission finishes
-	if(prevState != windows->Mainframe.State) {
-
-		prevState = windows->Mainframe.State;
-
-		return 1;  success: new frame began rendering on display
-	}
-
-	return 0;  error: previous frame rendering not yet finished
-}
-
-
-
-void window_UpdateAll(windows_t * windows){
-
-	windows->Mainframe.State = !windows->Mainframe.State;
-
-	window_Layering(windows);
-	wucy_disp_RenderNewFrame((uint8_t *)VRAM_SEND);
-
-}
-*/
-
-
-
-
-int8_t window_Create(windows_t * windows, window_t * wnd,  wnd_fcn_t WndDrawFcn,
-		layer_e layer, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h){
-
-	wnd->FrameBuff = wucy_hal_Malloc(MALLOC_SIMPLE, w * h * DISP_PIXEL_SIZE);
-
-	if(wnd == NULL) {
-		return -1; /* error: heap overflow */
-	}
-
-	wnd->geo.x = x;
-	wnd->geo.y = y;
-	wnd->geo.w = w;
-	wnd->geo.h = h;
-	wnd->layer = layer;
-
-	wnd->RedrawCondition = 1;
-	wnd->RedrawFcn = WndDrawFcn;
-
-	if(windows->List.tqh_first == NULL) {
-
-		TAILQ_INIT(&windows->List);
-
-		TAILQ_INSERT_HEAD(&windows->List, wnd, Windows);
-
-		return 1; /* success: inserted at head */
-	}
-
-	for (window_t * wndCur = windows->List.tqh_first; wndCur != NULL;
-			wndCur = wndCur->Windows.tqe_next) {
-
-		/* sort from lowest to highest head to tail */
-		if(wnd->layer < wndCur->layer) {
-
-			/* todo make so it adds before higher layer, after same layer,
-			 * so the same number layers have priority by creation time */
-
-			TAILQ_INSERT_BEFORE(wndCur, wnd, Windows);
-			return 2; /* success: inserted between head and tail */
-		}
-	}
-
-	TAILQ_INSERT_TAIL(&windows->List, wnd, Windows);
-
-	return 3; /* success: inserted at tail */
-
-}
-int8_t window_Delete(windows_t * windows, window_t * wnd){
-
-	free(wnd->FrameBuff);
-	TAILQ_REMOVE(&windows->List, wnd, Windows);
-	memset(wnd, 0x00, sizeof(window_t));
-
-	return 1;
-}
-
-
-
-void window_RedrawRequest(window_t * wnd) {
-
-	wnd->RedrawCondition = 1;
-
-}
-
-
-
-/* for general window types */
-inline void window_PixelSet(window_t * wnd,
-		gfx_pos_t x, gfx_pos_t y, pixelData_t data) {
-
-	if(x >= 0 && y >= 0 && x < wnd->geo.w && y < wnd->geo.h) {
-
-		*( wnd->FrameBuff + wnd->geo.w * y + x) = data;
-
-	}
-}
-
-
-
-/* for general window types */
-inline pixelData_t window_PixelGet(window_t * wnd,
-		gfx_pos_t x, gfx_pos_t y) {
-
-	if(x >= 0 && y >= 0 && x < wnd->geo.w && y < wnd->geo.h) {
-
-	return *( wnd->FrameBuff + wnd->geo.w * y + x);
-
-	}
-	return 0;
-}
-
-
-
-void window_SetPosition(window_t * wnd, gfx_pos_t x, gfx_pos_t y) {
-
-	wnd->geo.x = x;
-	wnd->geo.y = y;
-
-}
-
-
-
-int8_t window_SetDimensions(window_t * wnd, gfx_pos_t w, gfx_pos_t h) {
-
-	free(wnd->FrameBuff);
-
-	wnd->FrameBuff = wucy_hal_Malloc(MALLOC_SIMPLE, w * h * DISP_PIXEL_SIZE);
-
-	if(wnd == NULL) {
-
-		wnd->FrameBuff = wucy_hal_Malloc(MALLOC_SIMPLE, wnd->geo.w * wnd->geo.h * DISP_PIXEL_SIZE);
-
-		if(wnd == NULL){
-
-			return -2; /* critical error: frame buffer lost */
-		}
-
-		return -1; /* error: new frame buffer dimensions are to high for new buffer allocation */
-	}
-
-	wnd->geo.w = w;
-	wnd->geo.h = h;
-
-	return 1;
-
-}
-
-
-
-inline gfx_geo_t window_GeoGet(window_t * wnd) {
-
-	return wnd->geo;
-
-}

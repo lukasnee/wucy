@@ -59,8 +59,6 @@
 #include "freertos/task.h"
 #include "freertos/timers.h"
 
-
-
 typedef enum{
 
     WUCY_KERNEL_MAX_PRIOR = 10,
@@ -87,8 +85,7 @@ typedef enum{
 	#define SSD1351_PRIV_ACCESS
 #endif
 
-#include "window.h"
-#include "gfx.h"
+//#include "window.hpp"
 #include "ssd1351.h"
 
 #include "ui.h"
@@ -139,6 +136,7 @@ int8_t wucy_wnd_SetDimensions(window_t * wnd, gfx_pos_t w, gfx_pos_t h);
 gfx_geo_t wucy_wnd_GeoGet(window_t * wnd);
 
 
+/*
 void wucy_gfx_SetAll(window_t * wnd);
 void wucy_gfx_ClearAll(window_t * wnd);
 void wucy_gfx_DrawSinglePixel(window_t * wnd, c_hex_t color, gfx_pos_t x, gfx_pos_t y);
@@ -146,6 +144,7 @@ void wucy_gfx_DrawHLine(window_t * wnd, pixel_vram_t pxl_data, gfx_pos_t x, gfx_
 void wucy_gfx_DrawWindowFrame(window_t * wnd, c_hex_t color, gfx_pos_t thickness);
 void wucy_gfx_DrawRect(window_t * wnd, c_hex_t color, gfx_ref_e ref, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h);
 void wucy_gfx_DrawBox(window_t * wnd, c_hex_t color, gfx_ref_e ref, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h);
+*/
 
 
 // ============================================================================

@@ -1,3 +1,10 @@
-idf_component_register(SRC_DIRS "./" 
+idf_component_register(SRCS "AdafruitGFX/Adafruit_GFX.cpp" 
+                            "AdafruitGFX/glcdfont.c"
+                            
+                       SRC_DIRS "./" 
+                       
                        INCLUDE_DIRS "include" 
-                       REQUIRES kernel)
+                                    "AdafruitGFX/" 
+                                    "AdafruitGFX/Fonts" 
+                                    
+                       REQUIRES freertos kernel)
