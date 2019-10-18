@@ -132,6 +132,7 @@ private:
 
 	pixelData_t * FrameBuff;
 
+
 	layer_e layer; /* frame priority: drawn behind higher priority frames
 	and in front of lower priority frames */
 	uint8_t RedrawCondition:1;
