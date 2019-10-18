@@ -1,6 +1,6 @@
 # WUCY - Wearable Retro Computer
 
-`a watch for nerds`
+`watch for nerds`
 
 Currently in developement state.
 
