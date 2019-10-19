@@ -1,5 +1,6 @@
 idf_component_register(SRCS "AdafruitGFX/Adafruit_GFX.cpp" 
                             "AdafruitGFX/glcdfont.c"
+                            "window.cpp"
                             
                        SRC_DIRS "./" 
                        
@@ -7,4 +8,4 @@ idf_component_register(SRCS "AdafruitGFX/Adafruit_GFX.cpp"
                                     "AdafruitGFX/" 
                                     "AdafruitGFX/Fonts" 
                                     
-                       REQUIRES freertos kernel)
+                       REQUIRES freertos)

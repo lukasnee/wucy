@@ -35,7 +35,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <list>
+#include <vector>
+
+using namespace std;
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -101,10 +103,16 @@ protected:
 
 	/* coordinates x and y together references bottom left corner of the frame */
 
-	gfx_pos_t geo_w; /* width of frame in pixels */
-	gfx_pos_t geo_h; /* height of frame in pixels */
+	gfx_pos_t geo_w; /* width (of frame) in pixels */
+	gfx_pos_t geo_h; /* height (of frame) in pixels */
 
 public:
+
+	void Geo(gfx_pos_t x, gfx_pos_t y, gfx_pos_t w = 0, gfx_pos_t h = 0) :
+	geo_x(x), geo_y(y), geo_w(w), geo_h(h) {};
+
+	virtual void ~Geo(void);
+
 
 	void SetX(gfx_pos_t x) { geo_x = x; }
 	void SetY(gfx_pos_t y) { geo_y = y; }
@@ -116,10 +124,10 @@ public:
 
 	virtual void SetDimensions(gfx_pos_t w, gfx_pos_t h) { geo_w= w; geo_h= h; }
 
-	gfx_pos_t Get_x(void) { return geo_x; }
-	gfx_pos_t Get_y(void) { return geo_y; }
-	gfx_pos_t Get_w(void) { return geo_w; }
-	gfx_pos_t Get_h(void) { return geo_h; }
+	gfx_pos_t GetX(void) { return geo_x; }
+	gfx_pos_t GetY(void) { return geo_y; }
+	gfx_pos_t GetW(void) { return geo_w; }
+	gfx_pos_t GetH(void) { return geo_h; }
 
 	gfx_pos_t GetMidH(void) { return (geo_x + geo_w / 2); }
 	gfx_pos_t GetMidV(void) { return (geo_y + geo_h / 2); }
@@ -144,7 +152,7 @@ public:
     void 			SetLayer(layer_e l) { layer = l; };
 
 
-    int8_t Window(wnd_fcn_t WndDrawFcn);
+    int8_t Window(wnd_fcn_t WndDrawFcn, gfx_pos_t w = DISP_WIDTH, gfx_pos_t h = DISP_HEIGHT);
     void ~Window(void);
 
 	  void         	clearDisplay(void);
@@ -158,7 +166,7 @@ public:
 	  pixelData_t   getPixel(int16_t x, int16_t y);
 	  pixelData_t   *getBuffer(void) { return this->FrameBuff; };
 
-	  int8_t 		SetDimensions(gfx_pos_t w, gfx_pos_t h);
+	  int8_t 		SetDimensions(gfx_pos_t w = geo_w, gfx_pos_t h = geo_h);
 	  void 			drawFrame(uint16_t color, gfx_pos_t thickness);
 };
 
@@ -167,12 +175,14 @@ typedef struct{
 
 	uint8_t Framing:1;
 	uint8_t FirstFrame:1;
-
-	TimerHandle_t FPSLimiter_th;
-
 	uint8_t LayeringDone:1;
 	uint8_t TransmissionDone:1;
 	uint8_t FpsLimterAllows:1;
+
+	enum{ PING_DRAW_PONG_SEND,
+		PING_SEND_PONG_DRAW} BufferState:1;
+
+	TimerHandle_t FPSLimiter_th;
 
 }wnd_state_t;
 
@@ -185,51 +195,44 @@ typedef struct{
 
 }wnd_config_t;
 
-typedef struct{
-
-	wnd_fcn_t Fcn;
-	TaskHandle_t Handler;
-
-}wnds_task_t;
 
 //todo change
-#define VRAM_DRAW (!this.State ? this.Pong : this.Ping)
-#define VRAM_SEND (this.State ? this.Pong : this.Ping)
+#define FBUFF_DRAW (!Status.BufferState ? Pong : Ping)
+#define FBUFF_SEND (Status.BufferState ? Pong : Ping)
 
-class Mainframe{
+class Mainframe : public Geo {
 
 private:
 
 	pixelData_t * Ping;	/* buffer 1 */
 	pixelData_t * Pong;	/* buffer 2 */
 
-	enum{ PING_DRAW_PONG_SEND,
-		PING_SEND_PONG_DRAW} State:1;
-
-	std::list<Window> WndList;
+	vector<Window> Windows;
 
 	wnd_state_t 	Status;
 	wnd_config_t 	Config;
 
-	wnds_task_t 	LayeringTask;
-	wnds_task_t 	FramingTask;
-	wnds_task_t 	RenderingTask;
+	TaskHandle_t 	LayeringTask;
+	TaskHandle_t 	FramingTask;
+	TaskHandle_t 	RenderingTask;
 
 	void 		SetPixel(gfx_pos_t x, gfx_pos_t y, pixelData_t data);
 	pixelData_t GetPixel(gfx_pos_t x, gfx_pos_t y);
 
-	void 		Layering();
-	void 		Rendering();
-	void 		Framing();
+	void 		Layering(void * p);
+	void 		Rendering(void * p);
+	void 		Framing(void * p);
 
-	static void FPSLimiterCallback(TimerHandle_t xTimer);
+	void FPSLimiterCallback(TimerHandle_t xTimer);
 
 public:
 
-	int8_t 		Mainframe();
-	int8_t 		~Mainframe();
+	int8_t 		Mainframe(gfx_pos_t x = 0, gfx_pos_t y = 0, gfx_pos_t w = DISP_WIDTH, gfx_pos_t h = DISP_HEIGHT) :
+	geo_x(x), geo_y(y),geo_w(w),geo_h(h) {};
 
-	int8_t 		AddWindow(Window * wnd, layer_e l, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h);
+	void 		~Mainframe();
+
+	int8_t 		AddWindow(Window * wnd, layer_e l = 0, gfx_pos_t x = 0, gfx_pos_t y = 0);
 	int8_t 		RemoveWindow(Window * wnd);
 
 	int8_t 		FramingStart(uint8_t fps);
