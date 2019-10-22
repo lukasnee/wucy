@@ -2,7 +2,7 @@
 
 `Wearable computer for nerds.`
 
-Currently in developement state.
+_Currently in developement state._
 
 ### Vision
 
