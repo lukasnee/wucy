@@ -1,20 +1,24 @@
 # WUCY - Open Source Retro Watch
 
-`Wearable computer for nerds.`
+`Wearable computer for nerds.`  
+`It is honest rather than smart`
 
 _Currently in developement state._
 
 ### Vision
 
-is to create retro watch-like open source wearable computer. Technically you could call this an open source smartwatch, but I don't like the word "smart", in fact - computers are dumb, they do only what's told as long as they're open and only single user is in control. Lets keep it that way. I'd rather want wucy to be _honest_ than _smart_. My plan is to create hardware & software platform, spark a community, have fun and make something special. :)
+is to create open source retro watch from scratch. I want to create hardware & software platform, spark a community and have fun :). Project ispired by Zak Kemble's _N|Watch_, _Pebble_ watch, _Pip-boy_ from Fallout 3.
+
+Technically you could call this an open source smartwatch, but I don't like the word "smart", in fact - computers are dumb, they do only what's told as long as they're open. So I decided to keep it that way. 
 
 Currently I am working on this alone, but I encourage you to join.  
 I'm still learning how github works, I'm an amateur hacker, DM me if you think you can help. About the progress down at the bottom.
 
 ### Hardware
 
-Initial loose idea for hardware.
-_(Highest priority from top to bottom, bold is a must-have, ??? - yet usure of what chip to use)_
+Initial loose idea for hardware (Highest priority from top to bottom).
+_bold - must-have;  
+??? - yet usure of what chip to use._
 
 * **CORE - ESP32-PICO-D4** (very powerful System in Package: Xtensa® dual-core 32-bit LX6 microprocessors, up to 600 MIPS, integerated WiFi & BLE, 448 KB ROM, 520 KB SRAM, integrates 4 MB of external SPI flash, Quad-SPI supports multiple flash/SRAM chips).
 * **Display - SSD1351** (128x128 18-bit color OLED). I think it fits perfectly for this application. Costs just above 10 $ on aliExpress.
@@ -68,7 +72,6 @@ Windows framework working - window managing, layering, rendering on screen. Need
 Take everything with a grain of salt, I'm an inexperienced engineer, still a student. Honestly, I don't really know what I'm doing. I just have this idea in my mind and I want to make it somewhat real. I thinks it is quite cool.
 
 Some of my work inspirations: 
-Zak Kemble's N|Watch; Pebble watch; 
-Unexpected maker, Steve Wozniak, Linus Torvalds, Mohit Bhoite.
+Unexpected maker, Steve Wozniak, Linus Torvalds, Mohit Bhoite, Werner Herzog.
 
 [More info in wiki](https://github.com/therram/thera/wiki).
