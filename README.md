@@ -18,7 +18,7 @@ _(Highest priority from top to bottom, bold is a must-have, ??? - yet usure of w
 
 * **CORE - ESP32-PICO-D4** (very powerful System in Package: Xtensa® dual-core 32-bit LX6 microprocessors, up to 600 MIPS, integerated WiFi & BLE, 448 KB ROM, 520 KB SRAM, integrates 4 MB of external SPI flash, Quad-SPI supports multiple flash/SRAM chips).
 * **Display - SSD1351** (128x128 18-bit color OLED). I think it fits perfectly for this application. Costs just above 10 $ on aliExpress.
-* **Digital inputs - 4 ?.** Side scroll wheel (tri-state) and one additional tactile push button on contrary side (could be change).
+* **Digital inputs - at least 4.** Side scroll wheel (tri-state) and one additional tactile push button on contrary side (could be change). More buttons more flexible user interface. Maybe use ESP32 capacitive touch capability.
 * **Battery - 280 mAh Li-po (303030).** Found it quite cheap on ebay, it fits my CAD model really well, though it's energy density is around 380 Wh/L (according to specs sheet) while with current technology you could get almost double of that with a Li-Po - 730 Wh/L, more than 500 mAh at those dimensions. Might have to research more.
 * **Storage - microSD flash** card slot for mass storage.
 * **Connectivity - USB type C.** USB for for programming & Charging. (Maybe file access if possible ? I need to research that ?). Micro USB might also do, but i prioritize type C because it is becoming more convenient. Only drawbacks are cost and difficulty to hand-solder. 
