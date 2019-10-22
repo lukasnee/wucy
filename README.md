@@ -1,7 +1,6 @@
 # WUCY - Open Source Retro Watch
 
-`Wearable computer for nerds.`  
-`It is honest rather than smart`
+`Wearable computer for nerds` 
 
 _Currently in developement state._
 
