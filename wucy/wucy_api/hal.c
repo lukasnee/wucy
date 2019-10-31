@@ -25,10 +25,9 @@
 */
 
 #include <stdio.h>
-
-#include "wucyOS.h"
-#include "hal.h"
-
+#include <string.h>
+#include <wucy_api.h>
+#include <wucy_hal.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/timers.h"
@@ -195,13 +194,6 @@ spi_transaction_t spi_transaction;
 esp_err_t retval;
 spi_device_handle_t spi_oled;
 
-typedef struct{
-
-	dc_e DC;
-	uint32_t Pin;
-
-}dc_cb_t;
-
 esp_err_t ret;
 
 spi_bus_config_t buscfg = {
@@ -217,7 +209,7 @@ spi_bus_config_t buscfg = {
 /* This function is called (in irq context!) just before a transmission starts. */
 void spi_pre_transfer_callback(spi_transaction_t *t)
 {
-	dc_e dc = (dc_e)t->user;
+	uint8_t dc = (uint8_t)t->user;
     gpio_set_level(21, dc);  /*todo figure out what to do before spi message */
 }
 

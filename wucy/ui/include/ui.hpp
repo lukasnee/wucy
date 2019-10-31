@@ -1,7 +1,7 @@
 /*
- * config.h
+ * ui.h
  *
- *  Created on: 2019-09-30
+ *  Created on: 2019-10-06
  *      Author: lukas.neverauskis
  */
 /*
@@ -27,11 +27,10 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef WUCY_KERNEL_INCLUDE_WUCY_CONFIG_H_
-#define WUCY_KERNEL_INCLUDE_WUCY_CONFIG_H_
 
-#define DISP_MAX_AVAILABLE_FPS 100 /* range:[0 255] */
-#define DISP_SPI_CLOCK_FREQ 14500000
+#ifndef WUCY_UI_INCLUDE_UI_HPP_
+#define WUCY_UI_INCLUDE_UI_HPP_
 
+extern "C" void wucy_ui_Init(void);
 
-#endif /* WUCY_KERNEL_INCLUDE_WUCY_CONFIG_H_ */
+#endif /* WUCY_UI_INCLUDE_UI_HPP_ */

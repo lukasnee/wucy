@@ -30,6 +30,10 @@
 #ifndef WUCY_GFX_SSD1351_INCLUDE_SSD1351_CMD_H_
 #define WUCY_GFX_SSD1351_INCLUDE_SSD1351_CMD_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* ================================================================================ */
 /* |						SSD1351 fundamental commands 						  |	*/
 /* ================================================================================ */
@@ -333,5 +337,9 @@
 	  * 	VCI =2.4~3.5V, waiting time = 500ns/pixel.
 	  * 	(2) “*” stands for “Don’t care”.
 	  */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* WUCY_GFX_SSD1351_INCLUDE_SSD1351_CMD_H_ */

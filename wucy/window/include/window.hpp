@@ -31,21 +31,25 @@
 #ifndef WUCY_GFX_INCLUDE_WINDOW_H_
 #define WUCY_GFX_INCLUDE_WINDOW_H_
 
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
 #include <vector>
 
-using namespace std;
+extern "C" {
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/timers.h"
 
+}
+
 #include "Adafruit_GFX.h"
 
+
 typedef uint16_t pixelData_t;
+
+#define MAX_AVAILABLE_FPS 255
 
 /* format 0xAARRGGBB where 0xAA - alpha byte, 0xRR - Red byte, 0xGG - Green byte, 0xBB - blue byte. */
 typedef enum{
@@ -68,10 +72,6 @@ typedef enum{
 	COLOR_YELLOW = 	0xFFFFFF00,
 
 }c_hex_t;
-
-c_hex_t colorPalette16[16];
-c_hex_t colorPalette14[14];
-
 
 typedef enum{
 
@@ -108,10 +108,10 @@ protected:
 
 public:
 
-	void Geo(gfx_pos_t x, gfx_pos_t y, gfx_pos_t w = 0, gfx_pos_t h = 0) :
+	Geo(gfx_pos_t x, gfx_pos_t y, gfx_pos_t w = 0, gfx_pos_t h = 0) :
 	geo_x(x), geo_y(y), geo_w(w), geo_h(h) {};
 
-	virtual void ~Geo(void);
+	virtual ~Geo(void){};
 
 
 	void SetX(gfx_pos_t x) { geo_x = x; }
@@ -122,7 +122,7 @@ public:
 	void SetW(gfx_pos_t w) { geo_w = w; }
 	void SetH(gfx_pos_t h) { geo_h = h; }
 
-	virtual void SetDimensions(gfx_pos_t w, gfx_pos_t h) { geo_w= w; geo_h= h; }
+	virtual int8_t setDimensions(gfx_pos_t w, gfx_pos_t h) { geo_w = w; geo_h = h; return 0;}
 
 	gfx_pos_t GetX(void) { return geo_x; }
 	gfx_pos_t GetY(void) { return geo_y; }
@@ -137,25 +137,40 @@ public:
 class Window : public Geo, public Adafruit_GFX {
 
 private:
+	uint8_t 		pixelSize;
+	uint32_t 		frameBuffSize;
+	pixelData_t * 	FrameBuff;
 
-	pixelData_t * FrameBuff;
+	uint8_t transperancy:1; /* 0 - draw black color; 1 - skip drawing black color */
 
-
-	layer_e layer; /* frame priority: drawn behind higher priority frames
+	uint8_t layer; /* frame priority: drawn behind higher priority frames
 	and in front of lower priority frames */
-	uint8_t RedrawCondition:1;
+	uint8_t RedrawRequest:1;
 	wnd_fcn_t RedrawFcn;
 
 public:
 
-    void 			RedrawRequest() { RedrawCondition = 1; };
-    void 			SetLayer(layer_e l) { layer = l; };
+    void 			setRedrawRequest(uint8_t state = 1) { RedrawRequest = state; };
+    uint8_t 		getRedrawRequest() { return RedrawRequest; };
+
+	/* todo currently redraw gets requested whenever anything changes in framebuffer, make it smart and optimal */
+
+    void 			Redraw(Window * wnd = NULL) { RedrawRequest = 0;  RedrawFcn(wnd); };
+    void 			setRedrawFcn(wnd_fcn_t fcn) { RedrawFcn = fcn; };
+    wnd_fcn_t 		getRedrawFcn() { return RedrawFcn; };
+
+    void 			setTransperancy(uint8_t state = 1) { transperancy = state; };
+    uint8_t 		getTransperancy() { return transperancy; }
+
+    void 			setLayer(uint8_t l) { layer = l; };
+    uint8_t 		getLayer() { return layer; };
 
 
-    int8_t Window(wnd_fcn_t WndDrawFcn, gfx_pos_t w = DISP_WIDTH, gfx_pos_t h = DISP_HEIGHT);
-    void ~Window(void);
+    Window(gfx_pos_t w, gfx_pos_t h, uint8_t pixelSize);
+    ~Window();
 
-	  void         	clearDisplay(void);
+	  void 			startWrite(void);
+	  void         	clearAll(void);
 	  void         	setDisplay(void);
 //	  void         	invertDisplay(boolean i);
 
@@ -166,10 +181,22 @@ public:
 	  pixelData_t   getPixel(int16_t x, int16_t y);
 	  pixelData_t   *getBuffer(void) { return this->FrameBuff; };
 
-	  int8_t 		SetDimensions(gfx_pos_t w = geo_w, gfx_pos_t h = geo_h);
-	  void 			drawFrame(uint16_t color, gfx_pos_t thickness);
+	  int8_t 		setDimensions(gfx_pos_t w, gfx_pos_t h);
+	  void 			drawFrame(gfx_pos_t thickness);
+	  void 			drawDot(int16_t x, int16_t y);
+
+	  void 	setDrawColor(c_hex_t color);
+	  void 	setTextColor(c_hex_t color);
+	  void 	setTextColor(c_hex_t color, c_hex_t background);
+
+
+	  static const c_hex_t colorPalette16[16];
+	  static const c_hex_t colorPalette14[14];
 };
 
+typedef enum {
+	PING_DRAW_PONG_SEND = 0, PING_SEND_PONG_DRAW = 1
+} BufferState_e;
 
 typedef struct{
 
@@ -177,10 +204,9 @@ typedef struct{
 	uint8_t FirstFrame:1;
 	uint8_t LayeringDone:1;
 	uint8_t TransmissionDone:1;
-	uint8_t FpsLimterAllows:1;
+	uint8_t FpsLimiterAllows:1;
 
-	enum{ PING_DRAW_PONG_SEND,
-		PING_SEND_PONG_DRAW} BufferState:1;
+	BufferState_e BufferState:1;
 
 	TimerHandle_t FPSLimiter_th;
 
@@ -193,57 +219,61 @@ typedef struct{
 
 	uint8_t Fps;
 
-}wnd_config_t;
-
-
-//todo change
-#define FBUFF_DRAW (!Status.BufferState ? Pong : Ping)
-#define FBUFF_SEND (Status.BufferState ? Pong : Ping)
+}wnd_cfg_t;
 
 class Mainframe : public Geo {
 
 private:
 
+	std::vector<Window *> Windows;
+
+	uint8_t 		pixelSize;
+	uint32_t 		frameBuffSize;
+
 	pixelData_t * Ping;	/* buffer 1 */
 	pixelData_t * Pong;	/* buffer 2 */
 
-	vector<Window> Windows;
+	void 			SetPixel(gfx_pos_t x, gfx_pos_t y, pixelData_t data);
+	pixelData_t 	GetPixel(gfx_pos_t x, gfx_pos_t y);
 
-	wnd_state_t 	Status;
-	wnd_config_t 	Config;
+	static std::vector<Mainframe *> Mfs;
 
-	TaskHandle_t 	LayeringTask;
-	TaskHandle_t 	FramingTask;
-	TaskHandle_t 	RenderingTask;
+	static wnd_cfg_t 	Config;
+	static wnd_state_t 	Status;
 
-	void 		SetPixel(gfx_pos_t x, gfx_pos_t y, pixelData_t data);
-	pixelData_t GetPixel(gfx_pos_t x, gfx_pos_t y);
+	static TaskHandle_t LayeringTaskH;
+	static void 		Layering(void * p);
 
-	void 		Layering(void * p);
-	void 		Rendering(void * p);
-	void 		Framing(void * p);
+	static TaskHandle_t RenderingTaskH;
+	static void 		Rendering(void * p);
 
-	void FPSLimiterCallback(TimerHandle_t xTimer);
+	static TaskHandle_t FramingTaskH;
+	static void 		Framing(void * p);
+
+#define FBUFF_DRAW(mf_p) (!mf_p->Status.BufferState ? mf_p->Pong : mf_p->Ping)
+#define FBUFF_SEND(mf_p) (mf_p->Status.BufferState ? mf_p->Pong : mf_p->Ping)
 
 public:
 
-	int8_t 		Mainframe(gfx_pos_t x = 0, gfx_pos_t y = 0, gfx_pos_t w = DISP_WIDTH, gfx_pos_t h = DISP_HEIGHT) :
-	geo_x(x), geo_y(y),geo_w(w),geo_h(h) {};
+	Mainframe(gfx_pos_t w, gfx_pos_t h, uint8_t pixelSize);
 
-	void 		~Mainframe();
+	~Mainframe();
 
-	int8_t 		AddWindow(Window * wnd, layer_e l = 0, gfx_pos_t x = 0, gfx_pos_t y = 0);
-	int8_t 		RemoveWindow(Window * wnd);
+	int8_t 				addWindow(Window * wnd, wnd_fcn_t WndDrawFcn, uint8_t l = LAYER_VERY_TOP, gfx_pos_t x = 0, gfx_pos_t y = 0);
+	int8_t 				removeWindow(Window * wnd);
 
-	int8_t 		FramingStart(uint8_t fps);
-	int8_t 		FramingStop();
+	int8_t 				framingStart(uint8_t fps);
+	int8_t 				framingStop();
 
-	void 		SetAll();
-	void 		ClearAll();
+	void 				setAll();
+	void 				clearAll();
 
+	void 				FPSLimiterPass() { Status.FpsLimiterAllows = 1; };
+	TaskHandle_t 		getFramingTaskH() { return FramingTaskH; };
 
 };
 
+void FPSLimiterCallback(TimerHandle_t xTimer = NULL);
 
 
 #endif /* WUCY_GFX_INCLUDE_WINDOW_H_ */

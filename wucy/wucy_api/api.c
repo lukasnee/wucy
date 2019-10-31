@@ -25,7 +25,13 @@
 */
 
 #define WUCY_PRIV_ACCESS
-#include "wucyOS.h"
+
+#include "ssd1351.h"
+
+#include <wucy_api.h>
+
+
+
 
 /* USER PRIVATE INCLUDES START */
 
@@ -44,7 +50,6 @@ ssd1351_spi_t ssd1351_Interface = {
 	.EN = -1	/* -1 for "not used" */
 };
 
-windows_t Windows;
 
 /*
  * common types
@@ -102,7 +107,7 @@ inline void wucy_disp_WakeUp(void) {
 	ssd1351_Sleep(&ssd1351, SLEEP_OFF);
 }
 
-inline pixel_vram_t wucy_disp_HEXcolor2DispPixelData(uint32_t hexColor) {
+inline uint16_t wucy_disp_HEXcolor2DispPixelData(uint32_t hexColor) {
 	return ssd1351_color_HEX2PixelData(hexColor);
 }
 
@@ -111,7 +116,7 @@ inline pixel_vram_t wucy_disp_HEXcolor2DispPixelData(uint32_t hexColor) {
 // ============================================================================
 //								window module
 //  ===========================================================================
-
+/*
 
 int8_t wucy_wnd_FramingStart(uint8_t fps) {
 	return window_FramingStart(&Windows, fps);
@@ -135,6 +140,7 @@ inline int8_t wucy_wnd_Init(void) {
 inline int8_t wucy_wnd_DeInit(void) {
 	return window_DeInit(&Windows);
 }
+
 
 inline int8_t wucy_wnd_Create(window_t * wnd, wnd_fcn_t WndDrawFcn, layer_e layer,
 		gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h) {
@@ -172,12 +178,14 @@ inline int8_t wucy_wnd_SetDimensions(window_t * wnd,
 inline gfx_geo_t wucy_wnd_GeoGet(window_t * wnd) {
 	return window_GeoGet(wnd);
 }
+*/
 
 
 // ============================================================================
 //								gfx module
 //  ===========================================================================
 
+/*
 inline void wucy_gfx_SetAll(window_t * wnd) {
 	gfx_SetAll(wnd);
 }
@@ -204,5 +212,6 @@ inline void wucy_gfx_DrawBox(window_t * wnd, c_hex_t color,
 		gfx_ref_e ref, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h) {
 	gfx_draw_Box(wnd, color, ref, x, y, w, h);
 }
+*/
 
 

@@ -1,3 +1,4 @@
-idf_component_register(SRC_DIRS "./" 
+idf_component_register(SRC_DIRS "." 
                        INCLUDE_DIRS "include" 
-                       REQUIRES freertos driver heap ssd1351 window ui)
+                       REQUIRES freertos 
+                       PRIV_REQUIRES ui window wucy_api)

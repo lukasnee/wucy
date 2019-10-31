@@ -1,8 +1,7 @@
-
 /*
- * kernel.c
+ * kernel.h
  *
- *  Created on: 2019-09-30
+ *  Created on: 2019-10-29
  *      Author: lukas.neverauskis
  */
 /*
@@ -28,39 +27,17 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <wucy.h>
+#ifndef WUCY_KERNEL_INCLUDE_WUCY_H_
+#define WUCY_KERNEL_INCLUDE_WUCY_H_
 
-#include <wucy_api.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/timers.h"
+void wucy_Start(void);
 
-void wucy_ui_Init(void); /* extern from ui.cpp */
-
-void wucy_sys_Init(void * p) {
-
-	/* for debug */
-	wucy_hal_PinOutputInit(25);
-	wucy_hal_PinWrite(25, 0);
-
-	wucy_hal_PinOutputInit(26);
-	wucy_hal_PinWrite(26, 0);
-
-	wucy_hal_PinOutputInit(27);
-	wucy_hal_PinWrite(27, 0);
-
-	wucy_disp_Init();
-
-	wucy_ui_Init();
-
-
-	vTaskDelete(NULL);
+#ifdef __cplusplus
 }
+#endif
 
-void wucy_Start(void){
-
-	xTaskCreate(wucy_sys_Init, "sys_init\0", 1024*3, NULL, WUCY_KERNEL_MAX_PRIOR, NULL);
-
-}
-
+#endif /* WUCY_KERNEL_INCLUDE_WUCY_H_ */

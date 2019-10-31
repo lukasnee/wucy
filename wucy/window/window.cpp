@@ -1,5 +1,5 @@
 /*
- * window.c
+ * window.cpp
  *
  *  Created on: 2019-09-30
  *      Author: lukas.neverauskis
@@ -27,83 +27,53 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+using namespace std;
+
 #include "window.hpp"
 
-#include "wucyOS.h"
+#include <wucy_api.h>
 
-#include "Adafruit_GFX.h"
+
 
 #define swap(a, b) (((a) ^= (b)), ((b) ^= (a)), ((a) ^= (b)))
 
+Window::Window(gfx_pos_t w, gfx_pos_t h, uint8_t pixelSize) :
+		Geo(0, 0, w, h),
+		Adafruit_GFX(w, h),
+		pixelSize(pixelSize),
+		frameBuffSize(w * h * pixelSize) {
 
+	if (w && h) {
 
-const c_hex_t colorPalette16[16] = {
+		setDimensions(w, h);
 
-	COLOR_AQUA,
-	COLOR_BLACK,
-	COLOR_BLUE,
-	COLOR_FUCHSIA,
-	COLOR_GRAY,
-	COLOR_GREEN,
-	COLOR_LIME,
-	COLOR_MAROON,
-	COLOR_NAVY,
-	COLOR_OLIVE,
-	COLOR_PURPLE,
-	COLOR_RED,
-	COLOR_SILVER,
-	COLOR_TEAL,
-	COLOR_WHITE,
-	COLOR_YELLOW
-
-};
-
-const c_hex_t colorPalette14[14] = {
-
-	COLOR_AQUA,
-	COLOR_BLUE,
-	COLOR_FUCHSIA,
-	COLOR_GRAY,
-	COLOR_GREEN,
-	COLOR_LIME,
-	COLOR_MAROON,
-	COLOR_NAVY,
-	COLOR_OLIVE,
-	COLOR_PURPLE,
-	COLOR_RED,
-	COLOR_SILVER,
-	COLOR_TEAL,
-	COLOR_YELLOW
-
-};
-
-
-/* WINDOW */
-
-
-int8_t Window::Window(gfx_pos_t w, gfx_pos_t h, wnd_fcn_t WndDrawFcn) {
-
-	if(WndDrawFcn && w && h) {
-
-		RedrawFcn = WndDrawFcn;
-
-		return SetDimensions(w, h);
 	}
-	return -1;
+	else {
+
+		delete this;
+	}
 }
 
 
 
-void Window::~Window(void){
+Window::~Window(){
 
 	free(FrameBuff);
 }
 
 
-void Window::clearDisplay(void) {
+void Window::startWrite(void) {
+
+	RedrawRequest = 1;
+
+};
+
+
+
+void Window::clearAll(void) {
 
 	memset((uint8_t*) FrameBuff, 0x00,
-			GetW() * GetH() * DISP_PIXEL_SIZE);
+			GetW() * GetH() * pixelSize);
 
 }
 
@@ -112,7 +82,7 @@ void Window::clearDisplay(void) {
 void Window::setDisplay(void) {
 
 	memset((uint8_t*) FrameBuff, 0xFF,
-			GetW() * GetH() * DISP_PIXEL_SIZE);
+			GetW() * GetH() * pixelSize);
 
 }
 
@@ -182,17 +152,17 @@ inline pixelData_t Window::getPixel(int16_t x, int16_t y) {
 }
 
 
-int8_t Window::SetDimensions(gfx_pos_t w, gfx_pos_t h) {
+int8_t Window::setDimensions(gfx_pos_t w, gfx_pos_t h) {
 
 	free(FrameBuff);
 
-	FrameBuff = wucy_hal_Malloc(MALLOC_SIMPLE, w * h * DISP_PIXEL_SIZE);
+	FrameBuff = (pixelData_t *)wucy_hal_Malloc(MALLOC_SIMPLE, w * h * pixelSize);
 
 	/* if unable to change buffer dimensions and previous dimensions were different */
 	if(FrameBuff == NULL && GetW() != w && GetH() != h) {
 
 		/* reallocate freed memory buffer */
-		FrameBuff = wucy_hal_Malloc(MALLOC_SIMPLE, GetW() * GetH() * DISP_PIXEL_SIZE);
+		FrameBuff = (pixelData_t *)wucy_hal_Malloc(MALLOC_SIMPLE, GetW() * GetH() * pixelSize);
 
 		/* if malloc failed */
 		if(FrameBuff == NULL){
@@ -206,19 +176,424 @@ int8_t Window::SetDimensions(gfx_pos_t w, gfx_pos_t h) {
 	SetW(w);
 	SetH(h);
 
+	WIDTH =_width = w;
+	HEIGHT = _height = h;
+	frameBuffSize = w * h * pixelSize;
+
 	return 0;
 
 }
 
-void Window::drawFrame(uint16_t color, gfx_pos_t thickness) {
+/* todo might become unused and useless */
+void Window::drawFrame(gfx_pos_t thickness) {
 
 	for(gfx_pos_t t = 0; t < thickness; t++) {
 
-		drawRect(t, t, GetW() - t*2, GetH() - t*2, color);
+		drawRect(t, t, GetW() - t*2, GetH() - t*2);
 
 	}
 }
 
+void Window::drawDot(int16_t x, int16_t y) {
+
+	drawPixel(x, y, drawcolor);
+
+}
+
+void Window::setDrawColor(c_hex_t color) {
+
+	drawcolor = (uint16_t)wucy_disp_HEXcolor2DispPixelData(color);
+
+}
+/* transperant */
+void Window::setTextColor(c_hex_t color) {
+
+	textcolor = textbgcolor = (uint16_t)wucy_disp_HEXcolor2DispPixelData(color);
+
+}
+
+/* with background */
+void Window::setTextColor(c_hex_t color, c_hex_t background) {
+
+	textcolor = (uint16_t)wucy_disp_HEXcolor2DispPixelData(color);
+	textbgcolor = (uint16_t)wucy_disp_HEXcolor2DispPixelData(background);
+
+}
+
+
+const c_hex_t Window::colorPalette16[16] = {
+
+		COLOR_AQUA,
+		COLOR_BLACK,
+		COLOR_BLUE,
+		COLOR_FUCHSIA,
+		COLOR_GRAY,
+		COLOR_GREEN,
+		COLOR_LIME,
+		COLOR_MAROON,
+		COLOR_NAVY,
+		COLOR_OLIVE,
+		COLOR_PURPLE,
+		COLOR_RED,
+		COLOR_SILVER,
+		COLOR_TEAL,
+		COLOR_WHITE,
+		COLOR_YELLOW
+
+};
+const c_hex_t Window::colorPalette14[14] = {
+
+		COLOR_AQUA,
+		COLOR_BLUE,
+		COLOR_FUCHSIA,
+		COLOR_GRAY,
+		COLOR_GREEN,
+		COLOR_LIME,
+		COLOR_MAROON,
+		COLOR_NAVY,
+		COLOR_OLIVE,
+		COLOR_PURPLE,
+		COLOR_RED,
+		COLOR_SILVER,
+		COLOR_TEAL,
+		COLOR_YELLOW
+
+};
+
+
+//==================================================================
+/* 			MAINFRAME			 */
+
+
+
+void FPSLimiterCallback(TimerHandle_t xTimer) {
+
+	//wucy_hal_PinWrite(27, 1);
+
+	Mainframe * mf = (Mainframe *)pvTimerGetTimerID(xTimer);
+
+	mf->FPSLimiterPass();
+
+	if (eTaskGetState(mf->getFramingTaskH()) == eSuspended)
+		vTaskResume(mf->getFramingTaskH());
+}
+
+inline void Mainframe::SetPixel(gfx_pos_t x, gfx_pos_t y, pixelData_t data) {
+
+	if(x >= 0 && y >= 0 && x < GetW() && y < GetH()) {
+
+		*(FBUFF_DRAW(this) + GetW() * y + x) = data;
+
+	}
+}
+inline pixelData_t Mainframe::GetPixel(gfx_pos_t x, gfx_pos_t y) {
+
+	if(x >= 0 && y >= 0 && x < GetW() && y < GetH()) {
+
+		return *(FBUFF_DRAW(this) + GetW() * y + x);
+	}
+	return 0;
+}
+
+vector<Mainframe *> Mainframe::Mfs;
+
+wnd_cfg_t Mainframe::Config = { 0 };
+
+wnd_state_t Mainframe::Status = {
+		.Framing = 0,
+		.FirstFrame = 0,
+		.LayeringDone = 0,
+		.TransmissionDone = 0,
+		.FpsLimiterAllows = 0,
+		.BufferState = PING_DRAW_PONG_SEND,
+		.FPSLimiter_th = NULL
+
+};
+
+TaskHandle_t Mainframe::LayeringTaskH = NULL;
+
+void Mainframe::Layering(void * p) {
+
+	Mainframe * mf;
+	Window * win;
+
+	/* todo transperancy merging feature */
+
+	while (Status.Framing) {
+		/* cycle through all mainframes */
+		for (auto MfCur = Mfs.cbegin(); MfCur != Mfs.cend(); ++MfCur) {
+
+			mf = *MfCur;
+			/* auto clear frame */
+			mf->clearAll();
+
+			for (auto wndCur = mf->Windows.begin(); wndCur != mf->Windows.end(); ++wndCur) {
+
+				win = *wndCur;
+
+				if (win->getRedrawRequest()) {
+
+					win->clearAll();
+					win->Redraw(win);
+				}
+
+				for (gfx_pos_t y_wnd = 0, y_mf = win->GetY();
+						y_mf < mf->GetH() && y_mf < win->GetY() + win->GetH();
+						y_mf++) {
+
+					for (gfx_pos_t x_wnd = 0, x_mf = win->GetX();
+							x_mf < mf->GetW() && x_mf < win->GetX() + win->GetW();
+							x_mf++) {
+
+						if(!(win->getTransperancy() && win->getPixel(x_wnd, y_wnd) == 0x0000)) {
+
+							 mf->SetPixel(x_mf, y_mf, win->getPixel(x_wnd, y_wnd));
+
+						}
+
+						x_wnd++;
+					}
+					y_wnd++;
+				}
+			}
+		}
+
+		Status.LayeringDone = 1;
+		vTaskResume(FramingTaskH);
+
+		//wucy_hal_PinWrite(25, 0);
+		vTaskSuspend(NULL);
+		//wucy_hal_PinWrite(25, 1);
+
+	}
+	vTaskDelete(NULL);
+}
+
+
+TaskHandle_t Mainframe::FramingTaskH = NULL;
+
+void Mainframe::Rendering(void * p) {
+
+	Mainframe * mf;
+
+	while(Status.Framing) {
+		for (auto MfCur = Mfs.cbegin(); MfCur != Mfs.cend(); ++MfCur) {
+
+			mf = *MfCur;
+
+			/* begin timer for limiter */
+
+			if(xTimerIsTimerActive(Status.FPSLimiter_th) == pdFALSE)
+				xTimerStart(Status.FPSLimiter_th, 0);
+			wucy_hal_PinWrite(25, 1);
+			/* begin transmission */
+			wucy_disp_RenderNewFrame((uint8_t *)FBUFF_SEND(mf));
+			wucy_hal_PinWrite(26, 1);
+			/* task idles here until transmission is finished */
+		}
+
+		Status.TransmissionDone = 1;
+		vTaskResume(FramingTaskH);
+
+		if(Status.FpsLimiterAllows)
+			vTaskDelay(1);
+
+		//wucy_hal_PinWrite(26, 0);
+		vTaskSuspend(NULL);
+		//wucy_hal_PinWrite(26, 1);
+	}
+	vTaskDelete(NULL);
+}
+
+
+//static uint8_t lvl = 0;
+//
+//wucy_hal_PinWrite(26, lvl ^= 1);
+
+void Mainframe::Framing(void * p) {
+
+	while(Status.Framing) {
+
+		if (Status.FirstFrame
+				|| ( Status.LayeringDone &&
+					Status.TransmissionDone &&
+					Status.FpsLimiterAllows)
+					) {
+
+			Status.FirstFrame = 0;
+
+			/* reset framing condition flags */
+			Status.LayeringDone = 0;
+			Status.TransmissionDone = 0;
+			Status.FpsLimiterAllows = 0;
+
+			/* switch frame buffer state */
+			Status.BufferState = (
+					(Status.BufferState == PING_DRAW_PONG_SEND) ?
+							PING_SEND_PONG_DRAW : PING_DRAW_PONG_SEND);
+
+			/* Before rendering new frame to display,
+			 * enable layering task which has lower priority by a single step.
+			 * Eventualy current task will pause on transmission and pass on to layering task */
+
+			vTaskResume(RenderingTaskH);
+			vTaskResume(LayeringTaskH);
+
+		}
+
+		vTaskSuspend(NULL);
+
+	}
+	vTaskDelete(NULL);
+}
+
+
+
+TaskHandle_t Mainframe::RenderingTaskH = NULL;
+
+Mainframe::Mainframe(gfx_pos_t w, gfx_pos_t h, uint8_t pixelSize) :
+		Geo(0, 0, w, h), pixelSize(pixelSize), frameBuffSize(w * h * pixelSize) {
+
+	Mfs.push_back(this);
+
+	Status.Framing = 0;
+
+	Ping = (pixelData_t*) wucy_hal_Malloc(MALLOC_SPECIALIZED_DMA, frameBuffSize);
+	Pong = (pixelData_t*) wucy_hal_Malloc(MALLOC_SPECIALIZED_DMA, frameBuffSize);
+
+	if (Ping == NULL || Pong == NULL) {
+		delete this;
+	}
+}
+
+
+
+Mainframe::~Mainframe() {
+
+	Status.Framing = 0;
+
+	free(Ping);
+	free(Pong);
+
+	for (auto MfCur = Mfs.cbegin(); MfCur != Mfs.cend(); ++MfCur) {
+
+		if(*MfCur == this) {
+
+			Mfs.erase(MfCur);
+
+			break;
+		}
+	}
+}
+
+
+
+int8_t Mainframe::addWindow(Window * wnd, wnd_fcn_t WndDrawFcn, uint8_t l, gfx_pos_t x, gfx_pos_t y) {
+
+
+	wnd->setRedrawFcn(WndDrawFcn);
+	wnd->setLayer(l);
+
+	wnd->SetX(x);
+	wnd->SetY(y);
+
+	wnd->setRedrawRequest();
+
+	if(!Windows.empty()) {
+
+		for (auto wndCur = Windows.cbegin(); wndCur != Windows.cend(); ++wndCur) {
+
+			/* sort from lowest to highest head to tail */
+			if(wnd->getLayer() < (*wndCur)->getLayer()) {
+
+				/* todo make so it adds before higher layer, after same layer,
+				 * so the same number layers have priority by creation time */
+			//	std::vector<Window,allocator<Window>>::const_iterator
+
+				Windows.insert(wndCur, wnd);
+
+				return 2; /* success: inserted between head and tail */
+			}
+		}
+	}
+	Windows.push_back(wnd);
+
+	return 3; /* success: inserted at tail */
+
+}
+
+
+int8_t Mainframe::removeWindow(Window *wnd) {
+
+	for (auto wndCur = Windows.cbegin(); wndCur != Windows.cend(); ++wndCur) {
+
+		if(*wndCur == wnd) {
+
+			Windows.erase(wndCur);
+
+			return 0; /* element found and erased */
+		}
+	}
+
+	return -1; /* element was not found */
+}
+
+
+
+int8_t Mainframe::framingStart(uint8_t fps) {
+
+	//window_FramingStop(windows); /* clean windows framing handle */
+
+	Status.Framing = 1;
+	Status.FirstFrame = 1;
+	Config.Fps = fps ? fps : MAX_AVAILABLE_FPS;
+
+	Status.FPSLimiter_th = xTimerCreate("FPSLimiter\0",
+			1000 / Config.Fps / portTICK_PERIOD_MS, pdFALSE, 0, FPSLimiterCallback);
+
+	vTimerSetTimerID(Status.FPSLimiter_th, this);
+
+	xTaskCreate(Layering, "mf_lr\0", 1024, NULL, WUCY_WNDS_LAYER_TASK_PRIOR, &LayeringTaskH);
+	vTaskSuspend(LayeringTaskH);
+	xTaskCreate(Rendering, "wnds_rndr\0", 1024, NULL, WUCY_WNDS_RENDER_TASK_PRIOR, &RenderingTaskH);
+	vTaskSuspend(RenderingTaskH);
+	xTaskCreate(Framing, "wnds_frm\0", 1024, NULL, WUCY_WNDS_FRAME_TASK_PRIOR, &FramingTaskH);
+	return 0; /* success */
+}
+
+
+
+int8_t Mainframe::framingStop() {
+
+	xTimerDelete(Status.FPSLimiter_th, 0);
+
+	vTaskDelete(FramingTaskH);
+	vTaskDelete(LayeringTaskH);
+	vTaskDelete(RenderingTaskH);
+
+	Status.Framing = 0;
+
+	memset(&(Status), 0x00, sizeof(wnd_state_t));
+
+	return 0; /* success */
+}
+
+
+
+void Mainframe::setAll() {
+
+	memset((uint8_t*)FBUFF_DRAW(this), 0xFF, frameBuffSize);
+}
+
+
+
+void Mainframe::clearAll() {
+	memset((uint8_t*)FBUFF_DRAW(this), 0x00, frameBuffSize);
+
+}
+
+
+/* todo maybe */
 /*
 Geo Window::AdjustRectRef(gfx_ref_e ref, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h) {
 
@@ -267,291 +642,4 @@ Geo Window::AdjustRectRef(gfx_ref_e ref, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, 
 	return g;
 }
 */
-
-/* 			MAINFRAME			 */
-
-
-
-inline void Mainframe::SetPixel(gfx_pos_t x, gfx_pos_t y, pixelData_t data) {
-
-	if(x >= 0 && y >= 0 && x < GetW() && y < GetH()) {
-
-		*(FBUFF_DRAW + GetW() * y + x) = data;
-
-	}
-}
-inline pixelData_t Mainframe::GetPixel(gfx_pos_t x, gfx_pos_t y) {
-
-	if(x >= 0 && y >= 0 && x < GetW() && y < GetH()) {
-
-		return *(FBUFF_DRAW + GetW() * y + x);
-	}
-	return 0;
-}
-
-
-
-void Mainframe::Layering(void * p) {
-
-	/* todo transperancy merging feature */
-
-	while (Status.Framing) {
-
-		ClearAll();
-
-		for (auto wndCur = Windows.begin(); wndCur != Windows.end(); ++wndCur) {
-
-			if (wndCur->RedrawCondition) {
-
-				wndCur->RedrawFcn(NULL);
-				wndCur->RedrawCondition = 0;
-			}
-
-			for (gfx_pos_t y_wnd = 0, y_mf = wndCur->GetY();
-					y_mf < DISP_HEIGHT && y_mf < wndCur->GetY() + wndCur->GetH();
-					y_mf++) {
-
-				for (gfx_pos_t x_wnd = 0, x_mf = wndCur->GetX();
-						x_mf < DISP_WIDTH && x_mf < wndCur->GetX() + wndCur->GetW();
-						x_mf++) {
-
-					SetPixel(x_mf, y_mf, wndCur->getPixel(x_wnd, y_wnd));
-
-					x_wnd++;
-				}
-				y_wnd++;
-			}
-		}
-
-		Status.LayeringDone = 1;
-		vTaskResume(FramingTask);
-
-		wucy_hal_PinWrite(25, 0);
-		vTaskSuspend(NULL);
-		wucy_hal_PinWrite(25, 1);
-
-	}
-	vTaskDelete(NULL);
-}
-
-
-
-void Mainframe::Rendering(void * p) {
-
-	while(Status.Framing) {
-
-		/* begin timer for limiter */
-		wucy_hal_PinWrite(27, 0);
-		if(xTimerIsTimerActive(Status.FPSLimiter_th) == pdFALSE)
-			xTimerStart(Status.FPSLimiter_th, 0);
-
-		/* begin transmission */
-		wucy_disp_RenderNewFrame((uint8_t *)FBUFF_SEND);
-
-		/* task idles here until transmission is finished */
-
-		Status.TransmissionDone = 1;
-		vTaskResume(FramingTask);
-
-		if(Status.FpsLimterAllows)
-			vTaskDelay(1);
-
-		wucy_hal_PinWrite(26, 0);
-		vTaskSuspend(NULL);
-		wucy_hal_PinWrite(26, 1);
-	}
-	vTaskDelete(NULL);
-}
-
-
-
-void Mainframe::Framing(void * p) {
-
-	while(Status.Framing) {
-
-		if (Status.FirstFrame
-				|| ( Status.LayeringDone &&
-					Status.TransmissionDone &&
-					Status.FpsLimterAllows)
-					) {
-
-			Status.FirstFrame = 0;
-
-			/* reset framing condition flags */
-			Status.LayeringDone = 0;
-			Status.TransmissionDone = 0;
-			Status.FpsLimterAllows = 0;
-
-			/* switch frame buffer state */
-			Status.BufferState = !Status.BufferState;
-
-			/* Before rendering new frame to display,
-			 * enable layering task which has lower priority by a single step.
-			 * Eventualy current task will pause on transmission and pass on to layering task */
-
-			vTaskResume(RenderingTask);
-			vTaskResume(LayeringTask);
-
-		}
-
-		vTaskSuspend(NULL);
-
-	}
-	vTaskDelete(NULL);
-}
-
-
-
-void Mainframe::FPSLimiterCallback(TimerHandle_t xTimer) {
-
-	wucy_hal_PinWrite(27, 1);
-
-	Status.FpsLimterAllows = 1;
-
-	if (eTaskGetState(FramingTask) == eSuspended)
-		vTaskResume(FramingTask);
-}
-
-
-
-int8_t Mainframe::Mainframe(gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h){
-
-	Status.Framing = 0;
-
-	uint32_t buffSize = GetW() * GetH() * PIXEL_SIZE;
-
-	Ping = wucy_hal_Malloc(MALLOC_SPECIALIZED_DMA, buffSize);
-	Pong = wucy_hal_Malloc(MALLOC_SPECIALIZED_DMA, buffSize);
-
-
-	if(Ping && Pong) {
-
-		return 0; /* success */
-	}
-
-	delete this;
-	return -1;
-}
-
-
-
-void Mainframe::~Mainframe() {
-
-	Status.Framing = 0;
-
-	free(Ping);
-	free(Pong);
-
-	~Geo();
-
-}
-
-
-
-int8_t Mainframe::AddWindow(Window * wnd, layer_e l, gfx_pos_t x, gfx_pos_t y) {
-
-
-	wnd->layer = l;
-	wnd->SetX(x);
-	wnd->SetY(y);
-
-	wnd->RedrawCondition = 1;
-	//todo first thing to do adjust to c++ whats below
-
-	/*
-
-
-
-
-
-	if(List.tqh_first == NULL) {
-
-		TAILQ_INIT(&List);
-
-		TAILQ_INSERT_HEAD(&List, wnd, Windows);
-
-		return 1;  success: inserted at head
-	}
-
-	for (window_t * wndCur = List.tqh_first; wndCur != NULL;
-			wndCur = wndCur->Windows.tqe_next) {
-
-		 sort from lowest to highest head to tail
-		if(layer < wndCur->layer) {
-
-			 todo make so it adds before higher layer, after same layer,
-			 * so the same number layers have priority by creation time
-
-			TAILQ_INSERT_BEFORE(wndCur, wnd, Windows);
-			return 2;  success: inserted between head and tail
-		}
-	}
-
-	TAILQ_INSERT_TAIL(&List, wnd, Windows);
-
-	return 3;  success: inserted at tail
-	*/
-
-}
-
-
-
-int8_t Mainframe::RemoveWindow(Window *wnd) {
-
-}
-
-
-
-int8_t Mainframe::FramingStart(uint8_t fps) {
-
-	//window_FramingStop(windows); /* clean windows framing handle */
-
-	Status.Framing = 1;
-	Status.FirstFrame = 1;
-	Config.Fps = fps ? fps : DISP_MAX_AVAILABLE_FPS;
-
-	Status.FPSLimiter_th = xTimerCreate("FPSLimiter\0",
-			1000 / Config.Fps / portTICK_PERIOD_MS, pdFALSE, 0, FPSLimiterCallback);
-
-	vTimerSetTimerID(Status.FPSLimiter_th, this);
-
-	xTaskCreate((void (*)(void *))Layering, "mf_lr\0", 1024, NULL, WUCY_WNDS_LAYER_TASK_PRIOR, &(LayeringTask));
-	vTaskSuspend(LayeringTask);
-	xTaskCreate((void (*)(void *))Rendering, "wnds_rndr\0", 1024, NULL, WUCY_WNDS_RENDER_TASK_PRIOR, &(RenderingTask));
-	vTaskSuspend(LayeringTask);
-	xTaskCreate((void (*)(void *))Framing, "wnds_frm\0", 1024, NULL, WUCY_WNDS_FRAME_TASK_PRIOR, &(FramingTask));
-	return 0; /* success */
-}
-
-
-
-int8_t Mainframe::FramingStop() {
-
-	xTimerDelete(Status.FPSLimiter_th, 0);
-
-	vTaskDelete(FramingTask);
-	vTaskDelete(LayeringTask);
-	vTaskDelete(RenderingTask);
-
-	Status.Framing = 0;
-
-	memset(&(Status), 0x00, sizeof(wnd_state_t));
-
-	return 0; /* success */
-}
-
-
-
-void Mainframe::SetAll() {
-
-	memset((uint8_t*)FBUFF_DRAW, 0xFF, DISP_FRAMEBUFF_SIZE);
-}
-
-
-
-void Mainframe::ClearAll() {
-	memset((uint8_t*)FBUFF_DRAW, 0x00, DISP_FRAMEBUFF_SIZE);
-
-}
-
 

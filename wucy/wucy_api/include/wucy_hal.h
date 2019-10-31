@@ -30,6 +30,10 @@
 #ifndef WUCY_HAL_INCLUDE_HAL_H_
 #define WUCY_HAL_INCLUDE_HAL_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum{ MALLOC_SIMPLE, MALLOC_SPECIALIZED_DMA}malloc_type_e;
 
 /* HAL (lower abstraction) layer  */
@@ -50,5 +54,9 @@ void wucy_hal_Parallel_Init(void);
 void wucy_hal_Parallel_DeInit(void);
 void wucy_hal_Parallel_Transmit(uint8_t * data, uint32_t size, uint8_t dc);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* WUCY_HAL_INCLUDE_HAL_H_ */

@@ -27,7 +27,7 @@
 #define SSD1351_PRIV_ACCESS
 #include "ssd1351.h"
 
-#include "wucyOS.h"
+#include <wucy_api.h>
 
 /* ================================================================================ */
 /* |				SSD1351 User Hardware Abstraction Layer (HAL)				  |	*/
@@ -59,9 +59,9 @@ uint8_t default_settings[] = {
 	SSD1351_CMD_SET_SECND_PRECHRG_PERIOD, 1, 0x01,
 	SSD1351_CMD_SET_VCOMH_VOLTAGE, 1, 0x05,
 
-	/* 0x10 flips horziontally (referencing pin text as up)*/
-	/* 0x20 flips vertical  (referencing pin text as up) */
-	SSD1351_CMD_CONFIG_REG, 1, 0x24,
+	/* 0x10 flips horziontally (referencing pin text as upward)*/
+	/* 0x20 flips vertical  (referencing pin text as upward) */
+	SSD1351_CMD_CONFIG_REG, 1, 0x34,
 
 	SSD1351_CMD_DISPLAY_NORMAL, 0,
 

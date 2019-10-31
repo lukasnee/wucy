@@ -1,5 +1,5 @@
 /*
- * wucyOS.h
+ * wucyOS.hpp
  *
  *  Created on: 2019-10-01
  *      Author: lukas.neverauskis
@@ -27,8 +27,13 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+
 #ifndef WUCY_KERNEL_INCLUDE_WUCYOS_H_
 #define WUCY_KERNEL_INCLUDE_WUCYOS_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <stdint.h>
 
@@ -51,13 +56,9 @@
 
 #define DISP_FRAMEBUFF_SIZE (DISP_TOTAL_PIXELS * DISP_PIXEL_SIZE)
 
-#include "hal.h"
+#include "wucy_hal.h"
 
 /* wucy integrated modules */
-
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/timers.h"
 
 typedef enum{
 
@@ -74,21 +75,9 @@ typedef enum{
 	WUCY_WNDS_LAYER_TASK_PRIOR = WUCY_KERNEL_MAX_PRIOR - 1,
 
 
-}WUCY_RTOS_TASK_PRIORITES;
+}wucy_rtos_taskPrior_e;
 
 
-/* wucy integrated custom modules */
-
-#ifdef WUCY_PRIV_ACCESS
-	#define WINDOW_PRIV_ACCESS
-	#define GFX_PRIV_ACCESS
-	#define SSD1351_PRIV_ACCESS
-#endif
-
-//#include "window.hpp"
-#include "ssd1351.h"
-
-#include "ui.h"
 
 // ============================================================================
 //								display driver module
@@ -107,14 +96,12 @@ void wucy_disp_Sleep(void);
 void wucy_disp_WakeUp(void);
 void wucy_disp_VRAM_SetAll(void);
 void wucy_disp_VRAM_ClearAll(void);
-void wucy_disp_PixelSet(gfx_pos_t x, gfx_pos_t y, pixel_vram_t data);
-pixel_vram_t wucy_disp_PixelGet(gfx_pos_t x, gfx_pos_t y, pixel_vram_t data);
-pixel_vram_t wucy_disp_HEXcolor2DispPixelData(uint32_t hexColor);
+uint16_t wucy_disp_HEXcolor2DispPixelData(uint32_t hexColor);
 
 // ============================================================================
 //								window/GFX module
 //  ===========================================================================
-
+/*
 int8_t wucy_wnd_FramingStart(uint8_t fps);
 int8_t wucy_wnd_FramingStop(void);
 
@@ -122,10 +109,11 @@ void wucy_wnd_MainframeSetAll(void);
 void wucy_wnd_MainframeClearAll(void);
 int8_t wucy_wnd_Init(void);
 int8_t wucy_wnd_DeInit(void);
-/*
+
 uint8_t wucy_wnd_NewFrame(void);
 void wucy_wnd_RenderFrame(void);
 */
+/*
 int8_t wucy_wnd_Create(window_t * wnd, wnd_fcn_t WndDrawFcn, layer_e layer, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h);
 int8_t wucy_wnd_Delete(window_t * wnd);
 void wucy_wnd_RedrawRequest(window_t * wnd);
@@ -134,6 +122,7 @@ pixel_vram_t wucy_wnd_PixelGet(window_t * wnd, gfx_pos_t x, gfx_pos_t y);
 void wucy_wnd_SetPosition(window_t * wnd, gfx_pos_t x, gfx_pos_t y);
 int8_t wucy_wnd_SetDimensions(window_t * wnd, gfx_pos_t w, gfx_pos_t h);
 gfx_geo_t wucy_wnd_GeoGet(window_t * wnd);
+*/
 
 
 /*
@@ -147,11 +136,10 @@ void wucy_gfx_DrawBox(window_t * wnd, c_hex_t color, gfx_ref_e ref, gfx_pos_t x,
 */
 
 
-// ============================================================================
-//								wucyOS kernel
-//  ===========================================================================
 
+#ifdef __cplusplus
+}
+#endif
 
-void wucy_Start(void);
 
 #endif /* WUCY_KERNEL_INCLUDE_WUCYOS_H_ */

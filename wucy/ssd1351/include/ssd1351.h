@@ -50,6 +50,9 @@
 #ifndef COMPONENTS_SSD1351_FAST_H_
 #define COMPONENTS_SSD1351_FAST_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <stdint.h>
 
@@ -84,7 +87,7 @@
 #define DISP_GREEN_BIT_DEPTH 6
 #define DISP_BLUE_BIT_DEPTH 5
 
-#define PIXEL_SIZE 2 /* in bytes */
+#define SSD1351_PIXEL_SIZE 2 /* in bytes */
 
 #define DISP_A_MAX ((1 << 8) - 1) /* display alpha (transperancy) max value */
 
@@ -93,9 +96,9 @@
 #define DISP_B_MAX ((1 << DISP_BLUE_BIT_DEPTH) - 1) /* display blue gray scale max value */
 
 #define TOTAL_PIXELS DISP_WIDTH * DISP_HEIGHT
-#define VRAM_SIZE TOTAL_PIXELS * PIXEL_SIZE
+#define VRAM_SIZE TOTAL_PIXELS * SSD1351_PIXEL_SIZE
 
-#define AVAILABLE_FRAMERATE (DISP_SPI_CLOCK_FREQ / DISP_WIDTH / DISP_HEIGHT / PIXEL_SIZE / 8) /* for 14.5Mhz SPI ~ 55 fps */
+#define AVAILABLE_FRAMERATE (DISP_SPI_CLOCK_FREQ / DISP_WIDTH / DISP_HEIGHT / SSD1351_PIXEL_SIZE / 8) /* for 14.5Mhz SPI ~ 55 fps */
 
 #define PHASE_1_PERIOD 		((PHASE_1_PERIOD_VAL - 1) / 2)
 #define PHASE_2_PERIOD 		(PHASE_2_PERIOD_VAL)
@@ -218,7 +221,6 @@ typedef struct{
 }gfx_geo_t;
 #endif
 
-#ifdef SSD1351_PRIV_ACCESS
 
 /* ================================================================================ */
 /* |								SSD1351 Functions		  					  |	*/
@@ -249,6 +251,9 @@ void ssd1351_PixelSet(ssd1351_t * disp, gfx_pos_t x, gfx_pos_t y, pixel_vram_t d
 pixel_vram_t ssd1351_PixelGet(ssd1351_t * disp, gfx_pos_t x, gfx_pos_t y);
 #endif /* USE_WINDOWS */
 
-#endif /* SSD1351_PRIV_ACCESS */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* COMPONENTS_SSD1351_FAST_H_ */
