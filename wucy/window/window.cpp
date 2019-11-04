@@ -38,7 +38,7 @@ using namespace std;
 #define swap(a, b) (((a) ^= (b)), ((b) ^= (a)), ((a) ^= (b)))
 
 Window::Window(gfx_pos_t w, gfx_pos_t h, uint8_t pixelSize) :
-		Geo(0, 0, w, h),
+		Geo(0, 0, 0, 0),
 		Adafruit_GFX(w, h),
 		pixelSize(pixelSize),
 		frameBuffSize(w * h * pixelSize) {
@@ -154,31 +154,35 @@ inline pixelData_t Window::getPixel(int16_t x, int16_t y) {
 
 int8_t Window::setDimensions(gfx_pos_t w, gfx_pos_t h) {
 
-	free(FrameBuff);
+	/* allocate new buffer if length changes */
+	if( w * h != GetW()*GetH()) {
 
-	FrameBuff = (pixelData_t *)wucy_hal_Malloc(MALLOC_SIMPLE, w * h * pixelSize);
+		free(FrameBuff);
 
-	/* if unable to change buffer dimensions and previous dimensions were different */
-	if(FrameBuff == NULL && GetW() != w && GetH() != h) {
+		FrameBuff = (pixelData_t *)wucy_hal_Malloc(MALLOC_SIMPLE, w * h * pixelSize);
 
-		/* reallocate freed memory buffer */
-		FrameBuff = (pixelData_t *)wucy_hal_Malloc(MALLOC_SIMPLE, GetW() * GetH() * pixelSize);
+		/* if unable to change buffer dimensions and previous dimensions were different */
+		if(FrameBuff == NULL && GetW() != w && GetH() != h) {
 
-		/* if malloc failed */
-		if(FrameBuff == NULL){
+			/* reallocate freed memory buffer */
+			FrameBuff = (pixelData_t *)wucy_hal_Malloc(MALLOC_SIMPLE, GetW() * GetH() * pixelSize);
 
-			return -2; /* critical error: frame buffer lost */
+			/* if malloc failed */
+			if(FrameBuff == NULL){
+
+				return -2; /* critical error: frame buffer lost */
+			}
+
+			return -1; /* error: new frame buffer dimensions are to high for new buffer allocation */
 		}
 
-		return -1; /* error: new frame buffer dimensions are to high for new buffer allocation */
+		SetW(w);
+		SetH(h);
+
+		WIDTH =_width = w;
+		HEIGHT = _height = h;
+		frameBuffSize = w * h * pixelSize;
 	}
-
-	SetW(w);
-	SetH(h);
-
-	WIDTH =_width = w;
-	HEIGHT = _height = h;
-	frameBuffSize = w * h * pixelSize;
 
 	return 0;
 
@@ -261,22 +265,10 @@ const c_hex_t Window::colorPalette14[14] = {
 };
 
 
+
 //==================================================================
 /* 			MAINFRAME			 */
 
-
-
-void FPSLimiterCallback(TimerHandle_t xTimer) {
-
-	//wucy_hal_PinWrite(27, 1);
-
-	Mainframe * mf = (Mainframe *)pvTimerGetTimerID(xTimer);
-
-	mf->FPSLimiterPass();
-
-	if (eTaskGetState(mf->getFramingTaskH()) == eSuspended)
-		vTaskResume(mf->getFramingTaskH());
-}
 
 inline void Mainframe::SetPixel(gfx_pos_t x, gfx_pos_t y, pixelData_t data) {
 
@@ -297,16 +289,16 @@ inline pixelData_t Mainframe::GetPixel(gfx_pos_t x, gfx_pos_t y) {
 
 vector<Mainframe *> Mainframe::Mfs;
 
-wnd_cfg_t Mainframe::Config = { 0 };
+/*wnd_cfg_t Mainframe::Config = { 0 };*/
 
 wnd_state_t Mainframe::Status = {
+
 		.Framing = 0,
 		.FirstFrame = 0,
 		.LayeringDone = 0,
 		.TransmissionDone = 0,
-		.FpsLimiterAllows = 0,
+
 		.BufferState = PING_DRAW_PONG_SEND,
-		.FPSLimiter_th = NULL
 
 };
 
@@ -320,6 +312,7 @@ void Mainframe::Layering(void * p) {
 	/* todo transperancy merging feature */
 
 	while (Status.Framing) {
+
 		/* cycle through all mainframes */
 		for (auto MfCur = Mfs.cbegin(); MfCur != Mfs.cend(); ++MfCur) {
 
@@ -381,22 +374,19 @@ void Mainframe::Rendering(void * p) {
 
 			mf = *MfCur;
 
-			/* begin timer for limiter */
-
-			if(xTimerIsTimerActive(Status.FPSLimiter_th) == pdFALSE)
-				xTimerStart(Status.FPSLimiter_th, 0);
-			wucy_hal_PinWrite(25, 1);
 			/* begin transmission */
 			wucy_disp_RenderNewFrame((uint8_t *)FBUFF_SEND(mf));
-			wucy_hal_PinWrite(26, 1);
+
+
+
 			/* task idles here until transmission is finished */
+
+
 		}
 
 		Status.TransmissionDone = 1;
 		vTaskResume(FramingTaskH);
 
-		if(Status.FpsLimiterAllows)
-			vTaskDelay(1);
 
 		//wucy_hal_PinWrite(26, 0);
 		vTaskSuspend(NULL);
@@ -414,10 +404,10 @@ void Mainframe::Framing(void * p) {
 
 	while(Status.Framing) {
 
-		if (Status.FirstFrame
-				|| ( Status.LayeringDone &&
+		if (Status.FirstFrame ||
+				( Status.LayeringDone &&
 					Status.TransmissionDone &&
-					Status.FpsLimiterAllows)
+					fpsLimiterPasses())
 					) {
 
 			Status.FirstFrame = 0;
@@ -425,12 +415,16 @@ void Mainframe::Framing(void * p) {
 			/* reset framing condition flags */
 			Status.LayeringDone = 0;
 			Status.TransmissionDone = 0;
-			Status.FpsLimiterAllows = 0;
+
+			/* begin timer for limiter */
+			fpsLimiterReset();
+
+			/* count framerate for inspection */
+			fpsCountFrame();
+
 
 			/* switch frame buffer state */
-			Status.BufferState = (
-					(Status.BufferState == PING_DRAW_PONG_SEND) ?
-							PING_SEND_PONG_DRAW : PING_DRAW_PONG_SEND);
+			flipFramebuffers();
 
 			/* Before rendering new frame to display,
 			 * enable layering task which has lower priority by a single step.
@@ -452,7 +446,9 @@ void Mainframe::Framing(void * p) {
 TaskHandle_t Mainframe::RenderingTaskH = NULL;
 
 Mainframe::Mainframe(gfx_pos_t w, gfx_pos_t h, uint8_t pixelSize) :
-		Geo(0, 0, w, h), pixelSize(pixelSize), frameBuffSize(w * h * pixelSize) {
+		Geo(0, 0, w, h),
+		pixelSize(pixelSize),
+		frameBuffSize(w * h * pixelSize) {
 
 	Mfs.push_back(this);
 
@@ -471,6 +467,9 @@ Mainframe::Mainframe(gfx_pos_t w, gfx_pos_t h, uint8_t pixelSize) :
 Mainframe::~Mainframe() {
 
 	Status.Framing = 0;
+
+	stopFpsLimiter();
+
 
 	free(Ping);
 	free(Pong);
@@ -540,24 +539,23 @@ int8_t Mainframe::removeWindow(Window *wnd) {
 
 
 
-int8_t Mainframe::framingStart(uint8_t fps) {
+int8_t Mainframe::framingStart(uint8_t fps) { /* unlimited fps as default */
 
 	//window_FramingStop(windows); /* clean windows framing handle */
 
 	Status.Framing = 1;
 	Status.FirstFrame = 1;
-	Config.Fps = fps ? fps : MAX_AVAILABLE_FPS;
 
-	Status.FPSLimiter_th = xTimerCreate("FPSLimiter\0",
-			1000 / Config.Fps / portTICK_PERIOD_MS, pdFALSE, 0, FPSLimiterCallback);
-
-	vTimerSetTimerID(Status.FPSLimiter_th, this);
+	startFpsLimiter(fps);
 
 	xTaskCreate(Layering, "mf_lr\0", 1024, NULL, WUCY_WNDS_LAYER_TASK_PRIOR, &LayeringTaskH);
 	vTaskSuspend(LayeringTaskH);
+
 	xTaskCreate(Rendering, "wnds_rndr\0", 1024, NULL, WUCY_WNDS_RENDER_TASK_PRIOR, &RenderingTaskH);
 	vTaskSuspend(RenderingTaskH);
+
 	xTaskCreate(Framing, "wnds_frm\0", 1024, NULL, WUCY_WNDS_FRAME_TASK_PRIOR, &FramingTaskH);
+
 	return 0; /* success */
 }
 
@@ -565,7 +563,7 @@ int8_t Mainframe::framingStart(uint8_t fps) {
 
 int8_t Mainframe::framingStop() {
 
-	xTimerDelete(Status.FPSLimiter_th, 0);
+	stopFpsLimiter();
 
 	vTaskDelete(FramingTaskH);
 	vTaskDelete(LayeringTaskH);
@@ -591,6 +589,132 @@ void Mainframe::clearAll() {
 	memset((uint8_t*)FBUFF_DRAW(this), 0x00, frameBuffSize);
 
 }
+
+
+
+fps_t Mainframe::fps = {
+
+	.Counter = 0,
+	.Current = 0,
+	.Limit = 0,
+	.LimiterAllows = 1,
+	.limiterTimHndlr = NULL,
+	.counterTimHndlr = NULL,
+	.str = {'-', '-', '-', 'F', 'P', 'S', '\0'},
+	.pos = FPS_RIGHT_TOP_CORNER,
+	.show = 0,
+
+};
+
+void Mainframe::fpsLimiterCallback(TimerHandle_t xTimer) {
+
+	/* indicate the timer has expired (ready for new frame) */
+	fpsLimiterExpired();
+
+}
+
+void Mainframe::fpsCounterCallback(TimerHandle_t xTimer) {
+
+	wucy_hal_PinWrite(25,1);
+	/* proccess count sequence */
+	fpsCount();
+	xTimerStart(Mainframe::fps.counterTimHndlr, 0);
+}
+
+
+void Mainframe::changeFpsLimit(uint8_t fps) {
+
+	Mainframe::fps.Limit = fps;
+
+	if(getfpsLimit() > 0) {
+
+		xTimerDelete(Mainframe::fps.limiterTimHndlr, 0);
+		Mainframe::fps.limiterTimHndlr = xTimerCreate("fps_lim\0",
+				1000 / getfpsLimit() / portTICK_PERIOD_MS, pdFALSE,
+				0, fpsLimiterCallback);
+	}
+	else {
+		Mainframe::fps.LimiterAllows = 1;
+	}
+}
+
+
+
+/* begin limiter timer process */
+void Mainframe::startFpsLimiter(uint8_t fps) {
+
+	changeFpsLimit(fps);
+
+	/* store this to timer ID space */
+/*	vTimerSetTimerID(fps_limiter_th, this);*/
+
+
+	/* run autoreload 1.000 sec timer for framerate counting */
+	Mainframe::fps.counterTimHndlr = xTimerCreate("fps_cnt\0",
+			COUNTER_REFRESH_RATE_IN_MS / portTICK_PERIOD_MS, pdTRUE,
+			0, fpsCounterCallback);
+	xTimerStart(Mainframe::fps.counterTimHndlr, 0);
+
+	/* store this object pointer to timer ID space */
+/*	vTimerSetTimerID(fps_counter_th, this);*/
+
+}
+
+
+void Mainframe::fpsCount() {
+
+	/* calculate current fps */
+	fps.Current = fps.Counter * 1000 / COUNTER_REFRESH_RATE_IN_MS;
+	/* reset current count for new fps sample */
+	fps.Counter = 0;
+
+	sprintf(fps.str, "%dFPS", fps.Current);
+
+
+
+}
+
+/* stpo timer proccess */
+void Mainframe::stopFpsLimiter() {
+
+	fps.LimiterAllows = 0;
+
+	xTimerDelete(Mainframe::fps.limiterTimHndlr, 0);
+	xTimerDelete(Mainframe::fps.counterTimHndlr, 0);
+
+}
+
+
+void Mainframe::fpsLimiterExpired() {
+
+	fps.LimiterAllows = 1;
+
+	/* resume framing task to check if all conditions pass for new frame */
+	if (eTaskGetState(FramingTaskH) == eSuspended) {
+
+		vTaskResume(FramingTaskH);
+	}
+
+};
+
+/* restart timer */
+void Mainframe::fpsLimiterReset() {
+
+	if(getfpsLimit()) {
+
+		fps.LimiterAllows = 0;
+
+		/* reset and run timer */
+		if(xTimerIsTimerActive(Mainframe::fps.limiterTimHndlr) == pdFALSE)
+			xTimerStart(Mainframe::fps.limiterTimHndlr, 0);
+	}
+	else {
+		vTaskDelay(1);
+	}
+}
+
+
+
 
 
 /* todo maybe */

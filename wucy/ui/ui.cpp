@@ -42,33 +42,99 @@ extern "C" {
 #include <cstring>
 #include <cmath>
 
-#include "../ui/include/ui.hpp"
+#include "ui.hpp"
 
 #include <window.hpp>
 
 using namespace std;
 
 
-#define RGB_STATE_HOLD_LOW 0
-#define RGB_STATE_INCREASE z % 255
-#define RGB_STATE_DECREASE 255 - z % 255
-#define RGB_STATE_HOLD_HIGH 255
-
-#define BOX_SIZE 10
-
 Mainframe mf(DISP_WIDTH, DISP_HEIGHT, DISP_PIXEL_SIZE);
 
-Window sq(DISP_WIDTH*2/3, DISP_HEIGHT*2/3, DISP_PIXEL_SIZE),
-		bg(DISP_WIDTH, DISP_HEIGHT, DISP_PIXEL_SIZE);
+
+
+Window fpsMark(50, 50, DISP_PIXEL_SIZE);
+static void ui_draw_fpsMark(void * p);
+
+Window background(DISP_WIDTH, DISP_HEIGHT, DISP_PIXEL_SIZE);
+static void ui_draw_background(void * p);
+
+Window test(DISP_WIDTH*2/3, DISP_HEIGHT*2/3, DISP_PIXEL_SIZE);
+static void ui_draw_test(void * p);
+
+Window text(DISP_WIDTH, DISP_HEIGHT, DISP_PIXEL_SIZE);
+static void ui_draw_text(void * p);
+
+/* for testing/example purpose */
+void rotation(void * p);
+
+void wucy_ui_Init(void) {
+
+	mf.addWindow(&test, ui_draw_test, 3, 0, 0);
+	mf.addWindow(&background, ui_draw_background, 1, 0, 0);
+	mf.addWindow(&fpsMark, ui_draw_fpsMark, 10, 0, 0);
+	mf.addWindow(&text, ui_draw_text, 2, 0, 0);
+
+	xTaskCreate(rotation, "rotation", 1024, NULL, WUCY_PRIOR_HIGHEST - 3, NULL);
+
+	mf.framingStart(0);
+}
+
+
+
+static void ui_draw_fpsMark(void * p) {
+
+	uint16_t w, h;
+	int16_t x1, y1;
+
+	mf.fpsShow(); /* todo make switchable by some input */
+
+	if(mf.fpsVisable()) {
+
+		fpsMark.setFont(NULL);
+		fpsMark.setTextColor(COLOR_WHITE, COLOR_BLACK);
+		fpsMark.setTextSize(1);
+
+		fpsMark.getTextBounds(mf.getFpsPrintOut(), 0, 0, &x1, &y1, &w, &h);
+		fpsMark.setCursor(0, 0);
+		fpsMark.setDimensions(w, h);
+
+		fpsMark.print(mf.getFpsPrintOut());
+
+
+		switch (mf.getFpsMarkPos()) {
+
+		case FPS_LEFT_TOP_CORNER:
+			fpsMark.SetPosition(0, 0);
+			break;
+
+		case FPS_RIGHT_TOP_CORNER:
+			fpsMark.SetPosition(DISP_WIDTH - w, 0);
+			break;
+
+		case FPS_LEFT_BOTTOM_CORNER:
+			fpsMark.SetPosition(0, DISP_HEIGHT - h);
+			break;
+
+		case FPS_RIGHT_BOTTOM_CORNER:
+			fpsMark.SetPosition(DISP_WIDTH - w, DISP_HEIGHT - h);
+			break;
+
+		default:
+
+			return;
+		};
+	}
+}
+
+
 
 
 c_hex_t color = COLOR_BLACK;
-
-
 float i = 0.0, islow = 0.0;
 uint8_t lvl = 0;
 
-void rotation(void * p){
+void rotation(void * p) {
 
 	while(1){
 
@@ -82,7 +148,7 @@ void rotation(void * p){
 
 			wucy_hal_PinWrite(27, lvl ^= 1);
 
-			color = sq.colorPalette14[cp++];
+			color = test.colorPalette14[cp++];
 			if(cp >= 14)
 				cp = 0;
 
@@ -104,37 +170,41 @@ void rotation(void * p){
 	}
 }
 
-static void testDraw(void * p) {
+
+
+#define BOX_SIZE 10
+
+static void ui_draw_test(void * p) {
 
 	//sq.SetPosition(0 /*+ sin(islow)*64*/, 0 /*+ sin(islow)*64*/);
 
-	sq.SetPosition(5, 5);
+	test.SetPosition(5, 5);
 
-	sq.setDimensions(10 + (sin(islow) + 1) / 2 * 110, 10 + (sin(islow) + 1) / 2 * 110);
+	test.setDimensions(10 + (sin(islow) + 1) / 2 * 110, 10 + (sin(islow) + 1) / 2 * 110);
 
 	float ii = i;
 
-	sq.setDrawColor(color);
+	test.setDrawColor(color);
 
-	for(int16_t d = 4; d <= sq.GetW()/2; d +=6){
+	for(int16_t d = 4; d <= test.GetW()/2; d +=6){
 
-		sq.drawCircle(
-			sq.GetW()/2 + cos(ii) * sq.GetW()/4,
-			sq.GetH()/2 + sin(ii) * sq.GetH()/4,
+		test.drawCircle(
+			test.GetW()/2 + cos(ii) * test.GetW()/4,
+			test.GetH()/2 + sin(ii) * test.GetH()/4,
 			d);
 	}
 
-	sq.setDrawColor((c_hex_t)0xFF0000);
-	sq.fillRect(0, 0, BOX_SIZE, BOX_SIZE);	// 	bottom left - RED
+	test.setDrawColor((c_hex_t)0xFFFFFFFF);
+	test.fillRect(0, 0, BOX_SIZE, BOX_SIZE);	// 	bottom left - RED
 
-	sq.setDrawColor((c_hex_t)0x00FF00);
-	sq.fillRect(sq.GetW() - BOX_SIZE, 0, BOX_SIZE, BOX_SIZE);	//	bottom right - GREEN
+	test.setDrawColor((c_hex_t)0x00FF00);
+	test.fillRect(test.GetW() - BOX_SIZE, 0, BOX_SIZE, BOX_SIZE);	//	bottom right - GREEN
 
-	sq.setDrawColor((c_hex_t)0x0000FF);
-	sq.fillRect(0, sq.GetH() - BOX_SIZE, BOX_SIZE, BOX_SIZE);	//	top left - BLUE
+	test.setDrawColor((c_hex_t)0x0000FF);
+	test.fillRect(0, test.GetH() - BOX_SIZE, BOX_SIZE, BOX_SIZE);	//	top left - BLUE
 
-	sq.setDrawColor((c_hex_t)0xFF00FF);
-	sq.fillRect(sq.GetW() - BOX_SIZE, sq.GetH() - BOX_SIZE, BOX_SIZE, BOX_SIZE);	//	top right - PURPLE
+	test.setDrawColor((c_hex_t)0xFF00FF);
+	test.fillRect(test.GetW() - BOX_SIZE, test.GetH() - BOX_SIZE, BOX_SIZE, BOX_SIZE);	//	top right - PURPLE
 
 /*
 	wucy_gfx_DrawBox(&SquareTest, 0xFF0000, REF_BOTTOM_L, 	0, 				0, 				10, 10);
@@ -143,24 +213,24 @@ static void testDraw(void * p) {
 	wucy_gfx_DrawBox(&SquareTest, 0xFF00FF, REF_TOP_R, 		DISP_RANGE_H, 	DISP_RANGE_W, 	10, 10);
 */
 
-//	for(int16_t d = 4; d <= sq.GetW()/2; d +=6){
-//
-//
-//		sq.drawRect(
-//			sq.GetW()/2 + cos(ii) * sq.GetW()/4 - d/2,
-//			sq.GetW()/2 + sin(ii) * sq.GetW()/4 - d/2,
-//			d, d);
-//	}
+	for(int16_t d = 4; d <= test.GetW()/2; d +=6){
 
-	sq.setDrawColor(COLOR_TEAL);
-	sq.drawFrame(2);
+
+		test.drawRect(
+			test.GetW()/2 + cos(ii) * test.GetW()/4 - d/2,
+			test.GetW()/2 + sin(ii) * test.GetW()/4 - d/2,
+			d, d);
+	}
+
+	test.setDrawColor(COLOR_TEAL);
+	test.drawFrame(2);
 
 }
 
 #include<cstdio>
 #include "spook.h"
 
-static void bgDraw(void * p) {
+static void ui_draw_background(void * p) {
 
 
 //	bg.setDrawColor(COLOR_YELLOW);
@@ -169,7 +239,7 @@ static void bgDraw(void * p) {
 //
 //		for(uint8_t x = 0; x < 128; x += 8) {
 //
-//			bg.drawRect(x, y, 8, 8);
+//			background.drawRect(x, y, 8, 8);
 //
 //		}
 //	}
@@ -187,8 +257,8 @@ uint32_t add = spook[0x0A];
 			color |= 0xFF000000;
 			add += 3;
 
-			bg.setDrawColor((c_hex_t)color);
-			bg.drawDot(x, y);
+			background.setDrawColor((c_hex_t)color);
+			background.drawDot(x, y);
 
 		}
 	}
@@ -201,14 +271,18 @@ uint32_t add = spook[0x0A];
 //	bg.print("HACKED");
 
 
-	//bg.drawBitmap(0, 0, spook, 128, 128);
+	//background.drawBitmap(0, 0, spook, 128, 128);
 }
 
 #include "Picopixel.h"
 
-void txtDraw(void * p) {
+void ui_draw_text(void * p) {
 
 	Window * wnd = (Window*)p;
+
+
+
+	wnd->setTransperancy(1);
 
 	wnd->setFont(NULL);
 
@@ -229,22 +303,13 @@ void txtDraw(void * p) {
 
 }
 
-void wucy_ui_Init(void) {
 
+//
+//#define RGB_STATE_HOLD_LOW 0
+//#define RGB_STATE_INCREASE z % 255
+//#define RGB_STATE_DECREASE 255 - z % 255
+//#define RGB_STATE_HOLD_HIGH 255
 
-	mf.addWindow(&sq, testDraw, 3, 0, 0);
-	mf.addWindow(&bg, bgDraw, 1, 0, 0);
-
-	Window * txt = new Window(DISP_WIDTH, DISP_HEIGHT, DISP_PIXEL_SIZE);
-
-	txt->setTransperancy(1);
-
-	mf.addWindow(txt, txtDraw, 2, 0, 0);
-
-	xTaskCreate(rotation, "rotation", 1024, NULL, WUCY_PRIOR_HIGHEST - 3, NULL);
-
-	mf.framingStart(45);
-}
 
 //	ucg_Init(&ucg, ucg_dev_ssd1351_18x128x128_ilsoft, ucg_ext_ssd1351_18, ucg_com_my_own_hal);
 //	ucg_SetFontMode(&ucg, UCG_FONT_MODE_TRANSPARENT);
@@ -322,7 +387,6 @@ void wucy_ui_Init(void) {
 //		ucg_DrawLine(&ucg, 64, 64, 64 + cos(i)*91, 64 + sin(i)*91);
 
 //	}
-
 
 
 

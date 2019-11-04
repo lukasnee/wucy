@@ -41,7 +41,6 @@ extern "C" {
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/timers.h"
-
 }
 
 #include "Adafruit_GFX.h"
@@ -49,7 +48,6 @@ extern "C" {
 
 typedef uint16_t pixelData_t;
 
-#define MAX_AVAILABLE_FPS 255
 
 /* format 0xAARRGGBB where 0xAA - alpha byte, 0xRR - Red byte, 0xGG - Green byte, 0xBB - blue byte. */
 typedef enum{
@@ -134,6 +132,18 @@ public:
 };
 
 
+
+typedef enum{
+
+	FPS_LEFT_TOP_CORNER,
+	FPS_RIGHT_TOP_CORNER,
+	FPS_LEFT_BOTTOM_CORNER,
+	FPS_RIGHT_BOTTOM_CORNER,
+
+} fps_draw_e;
+
+
+
 class Window : public Geo, public Adafruit_GFX {
 
 private:
@@ -192,7 +202,10 @@ public:
 
 	  static const c_hex_t colorPalette16[16];
 	  static const c_hex_t colorPalette14[14];
+
 };
+
+
 
 typedef enum {
 	PING_DRAW_PONG_SEND = 0, PING_SEND_PONG_DRAW = 1
@@ -204,24 +217,35 @@ typedef struct{
 	uint8_t FirstFrame:1;
 	uint8_t LayeringDone:1;
 	uint8_t TransmissionDone:1;
-	uint8_t FpsLimiterAllows:1;
 
 	BufferState_e BufferState:1;
 
-	TimerHandle_t FPSLimiter_th;
 
 }wnd_state_t;
 
 typedef enum{ FPS_LIMITER_RESET = 0,
 	FPS_LIMITER_ELAPSED}fps_limiter_e;
 
-typedef struct{
 
-	uint8_t Fps;
+#define MAX_AVAILABLE_FPS 255
+#define COUNTER_REFRESH_RATE_IN_MS 1000
 
-}wnd_cfg_t;
+typedef struct {
+
+	uint8_t 		Counter, Current, Limit;
+	uint8_t 		LimiterAllows:1;
+	TimerHandle_t 	limiterTimHndlr, counterTimHndlr;
+
+	char 			str[7];
+	fps_draw_e 		pos;
+	uint8_t 		show:1;
+
+} fps_t;
+
 
 class Mainframe : public Geo {
+
+	/* mainframe features */
 
 private:
 
@@ -238,7 +262,6 @@ private:
 
 	static std::vector<Mainframe *> Mfs;
 
-	static wnd_cfg_t 	Config;
 	static wnd_state_t 	Status;
 
 	static TaskHandle_t LayeringTaskH;
@@ -250,8 +273,17 @@ private:
 	static TaskHandle_t FramingTaskH;
 	static void 		Framing(void * p);
 
-#define FBUFF_DRAW(mf_p) (!mf_p->Status.BufferState ? mf_p->Pong : mf_p->Ping)
-#define FBUFF_SEND(mf_p) (mf_p->Status.BufferState ? mf_p->Pong : mf_p->Ping)
+
+	static void flipFramebuffers() {
+		Status.BufferState = (
+				(Status.BufferState == PING_DRAW_PONG_SEND) ?
+						PING_SEND_PONG_DRAW : PING_DRAW_PONG_SEND);
+	};
+
+	#define FBUFF_DRAW(mf_p) (!mf_p->Status.BufferState ? mf_p->Pong : mf_p->Ping)
+	#define FBUFF_SEND(mf_p) (mf_p->Status.BufferState ? mf_p->Pong : mf_p->Ping)
+
+
 
 public:
 
@@ -259,21 +291,49 @@ public:
 
 	~Mainframe();
 
-	int8_t 				addWindow(Window * wnd, wnd_fcn_t WndDrawFcn, uint8_t l = LAYER_VERY_TOP, gfx_pos_t x = 0, gfx_pos_t y = 0);
-	int8_t 				removeWindow(Window * wnd);
+	int8_t addWindow(Window * wnd, wnd_fcn_t WndDrawFcn, uint8_t l = LAYER_VERY_TOP, gfx_pos_t x = 0, gfx_pos_t y = 0);
+	int8_t removeWindow(Window * wnd);
 
-	int8_t 				framingStart(uint8_t fps);
-	int8_t 				framingStop();
+	int8_t framingStart(uint8_t fps = 0);
+	int8_t framingStop();
 
-	void 				setAll();
-	void 				clearAll();
 
-	void 				FPSLimiterPass() { Status.FpsLimiterAllows = 1; };
-	TaskHandle_t 		getFramingTaskH() { return FramingTaskH; };
+	void setAll();
+	void clearAll();
+
+
+	/* fps features */
+
+private:
+
+	static fps_t fps;
+
+	static void fpsLimiterReset();
+	static uint8_t fpsLimiterPasses() { return fps.LimiterAllows; };
+	static void fpsCountFrame() { fps.Counter++; };
+	static void startFpsLimiter(uint8_t fps = 0); /* unlimited default */
+	static void stopFpsLimiter();
+
+	static void fpsLimiterCallback(TimerHandle_t xTimer);
+	static void fpsCounterCallback(TimerHandle_t xTimer);
+
+public:
+
+	static void fpsLimiterExpired();
+	static void fpsCount();
+	static void setFpsMarkPos(fps_draw_e pos) { fps.pos = pos; };
+	static fps_draw_e getFpsMarkPos() { return fps.pos; };
+	static void fpsShow() { fps.show = 1; };
+	static void fpsHide() { fps.show = 0; };
+	static uint8_t fpsVisable() { return fps.show; };
+	static uint16_t getFps(){ return fps.Current; }
+
+	/* 7 chars = "000FPS\0" */
+	static const char * getFpsPrintOut(){ return fps.str; }
+	static void changeFpsLimit(uint8_t fps);
+	static uint8_t getfpsLimit() { return fps.Limit; };
 
 };
-
-void FPSLimiterCallback(TimerHandle_t xTimer = NULL);
 
 
 #endif /* WUCY_GFX_INCLUDE_WINDOW_H_ */
