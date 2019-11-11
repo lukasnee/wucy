@@ -95,6 +95,36 @@ inline uint8_t * pgm_read_bitmap_ptr(const GFXfont *gfxFont)
 #define _swap_int16_t(a, b) { int16_t t = a; a = b; b = t; }
 #endif
 
+
+
+
+
+
+#ifdef WUCY_OS
+
+void Print::print(const std::string str) {
+
+	for(auto it = str.begin(); it != str.end(); ++it) {
+		write(*it);
+	}
+}
+
+
+
+void Print::println(const std::string str) {
+
+	print(str);
+	write('\0');
+}
+
+
+#endif
+
+
+
+
+
+
 /**************************************************************************/
 /*!
    @brief    Instatiate a GFX context for graphics! Can only be done by a superclass
@@ -1292,11 +1322,13 @@ void Adafruit_GFX::setFont(const GFXfont *f) {
             // Switching from classic to new font behavior.
             // Move cursor pos down 6 pixels so it's on baseline.
             cursor_y += 6;
+
         }
     } else if(gfxFont) { // NULL passed.  Current font struct defined?
         // Switching from new to classic font behavior.
         // Move cursor pos up 6 pixels so it's at top-left of char.
         cursor_y -= 6;
+
     }
     gfxFont = (GFXfont *)f;
 }
@@ -1962,28 +1994,3 @@ void GFXcanvas16::byteSwap(void) {
 }
 
 #endif /* WUCY_OS */
-
-
-#ifdef WUCY_OS
-
-void Print::print(const char * str) {
-
-	while(*str != '\0') {
-
-		write(*str);
-		str++;
-	}
-
-}
-
-
-
-void Print::println(const char * str) {
-
-	print(str);
-	write('\0');
-}
-
-
-#endif
-

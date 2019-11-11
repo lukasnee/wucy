@@ -48,36 +48,111 @@ extern "C" {
 
 using namespace std;
 
+/* inputs  */
+
+RotaryEncoder ROTEN(25, 26);
+button_t ROTEN_OK;
+
+/* outputs  */
 
 Mainframe mf(DISP_WIDTH, DISP_HEIGHT, DISP_PIXEL_SIZE);
 
-
-
-Window fpsMark(50, 50, DISP_PIXEL_SIZE);
 static void ui_draw_fpsMark(void * p);
+Window fpsMark(40, 10, DISP_PIXEL_SIZE, ui_draw_fpsMark);
 
-Window background(DISP_WIDTH, DISP_HEIGHT, DISP_PIXEL_SIZE);
-static void ui_draw_background(void * p);
+//static void ui_draw_background(void * p);
+//Window background(DISP_WIDTH, DISP_HEIGHT, DISP_PIXEL_SIZE, ui_draw_background);
 
-Window test(DISP_WIDTH*2/3, DISP_HEIGHT*2/3, DISP_PIXEL_SIZE);
 static void ui_draw_test(void * p);
+Window test(DISP_WIDTH*2/3, DISP_HEIGHT*2/3, DISP_PIXEL_SIZE, ui_draw_test);
 
-Window text(DISP_WIDTH, DISP_HEIGHT, DISP_PIXEL_SIZE);
-static void ui_draw_text(void * p);
+//static void ui_draw_text(void * p);
+//Window text(DISP_WIDTH, DISP_HEIGHT, DISP_PIXEL_SIZE, ui_draw_text);
+
+#include <object.hpp>
+
+OptionList menu(NULL, 20, 20, DISP_WIDTH*2/3, DISP_HEIGHT*2/3);
+
+typedef enum {
+
+	OPT_VIENAS,
+	OPT_DU,
+	OPT_TRYS,
+	OPT_KETURI,
+	OPT_PENKI,
+	OPT_SESI,
+	OPT_SEPTYNI,
+	OPT_ASTUONI,
+	OPT_DEVYNI,
+	OPT_DESIMT
+
+};
+
+#include "bouncer.hpp"
+#include "sd_card.hpp"
+
+
+
+BouncerBox Bbox(DISP_WIDTH, DISP_HEIGHT);
 
 /* for testing/example purpose */
-void rotation(void * p);
+void ui_one_ms_timer(void * p);
+
+void menu_vienas_cb(void * p) {
+
+	Bbox.removeBouncers(0xFF);
+
+}
+
+void menu_du_cb(void * p) {
+
+	menu.hideOption(OPT_KETURI);
+
+}
+
+void menu_trys_cb(void * p) {
+
+	menu.hideOption(OPT_KETURI, HIDE_FALSE);
+
+}
+
 
 void wucy_ui_Init(void) {
 
-	mf.addWindow(&test, ui_draw_test, 3, 0, 0);
-	mf.addWindow(&background, ui_draw_background, 1, 0, 0);
-	mf.addWindow(&fpsMark, ui_draw_fpsMark, 10, 0, 0);
-	mf.addWindow(&text, ui_draw_text, 2, 0, 0);
+//	mf.addWindow(&test, 		3, 0, 0);
+//	mf.addWindow(&background, 	1, 0, 0);
+	mf.addWindow(&fpsMark, 		255, 0, 0);
+//	mf.addWindow(&text, 		2, 0, 0);
 
-	xTaskCreate(rotation, "rotation", 1024, NULL, WUCY_PRIOR_HIGHEST - 3, NULL);
+	mf.addWindow(&Bbox, 4, 0, 0);
+	//Bbox.addBouncers(50);
+
+	menu.setTitle("menu");
+	menu.addOption(0, OPT_VIENAS, "vienas", menu_vienas_cb);
+	menu.addOption(1, OPT_DU, "du", menu_du_cb);
+	menu.addOption(2, OPT_TRYS, "trys", menu_trys_cb);
+	menu.addOption(3, OPT_KETURI, "keturi", NULL);
+	menu.addOption(4, OPT_PENKI, "penki", NULL);
+	menu.addOption(5, OPT_SESI, "sesi", NULL);
+	menu.addOption(6, OPT_SEPTYNI, "septyni", NULL);
+	menu.addOption(7, OPT_ASTUONI, "astuoni", NULL);
+	menu.addOption(8, OPT_DEVYNI, "devyni", NULL);
+	menu.addOption(9, OPT_DESIMT, "desimt", NULL);
+
+	mf.addWindow(&menu, 5, 20, 20);
+
+	xTaskCreate(ui_one_ms_timer, "ui_tim_1", 1024, NULL, WUCY_PRIOR_HIGHEST - 3, NULL);
 
 	mf.framingStart(0);
+
+	wucy_hal_PinInit(27, W_PIN_DIR_INPUT, W_PIN_PULL_UP);
+	Button_Init(&ROTEN_OK, 27, BTN_TYPE_NORMAL);
+	Button_Enable(&ROTEN_OK);
+
+	//sd_test();
+
+
+
 }
 
 
@@ -129,16 +204,44 @@ static void ui_draw_fpsMark(void * p) {
 
 
 
+int8_t number = 0;
 
 c_hex_t color = COLOR_BLACK;
+
 float i = 0.0, islow = 0.0;
-uint8_t lvl = 0;
 
-void rotation(void * p) {
+void ui_one_ms_timer(void * p) {
 
-	while(1){
 
-		static uint16_t colorTick = 0, cp = 0;
+
+	uint16_t colorTick = 0, cp = 0;
+
+	while(1) {
+
+		ROTEN.tick();
+
+		Button_TimeBaseRoutine();
+
+
+		switch(ROTEN.getDirection()) {
+
+		case -1:
+			Bbox.removeBouncers(1);
+			break;
+
+		case 0:
+			break;
+
+		case 1:
+			Bbox.addBouncers(1);
+			break;
+
+
+		}
+
+
+		if(!(colorTick % 50))
+			Bbox.setRedrawRequest();
 
 		colorTick++;
 
@@ -146,21 +249,12 @@ void rotation(void * p) {
 
 			colorTick = 0;
 
-			wucy_hal_PinWrite(27, lvl ^= 1);
-
-			color = test.colorPalette14[cp++];
-			if(cp >= 14)
-				cp = 0;
+			color = test.colorPalette14[++cp%14];
 
 		}
 
 		i += 6.28 / 1000;
-		if(i > 6.28) {
-
-			i -= 6.28;
-		}
-
-
+		if(i > 6.28)i -= 6.28;
 
 		islow += 6.28 / 5000;
 		if(islow > 6.28)islow -= 6.28;
@@ -170,50 +264,34 @@ void rotation(void * p) {
 	}
 }
 
-
+#include "FreeMono12pt7b.h"
 
 #define BOX_SIZE 10
 
 static void ui_draw_test(void * p) {
 
+	//test.fillAll(COLOR_GRAY);
+
 	//sq.SetPosition(0 /*+ sin(islow)*64*/, 0 /*+ sin(islow)*64*/);
 
 	test.SetPosition(5, 5);
 
-	test.setDimensions(10 + (sin(islow) + 1) / 2 * 110, 10 + (sin(islow) + 1) / 2 * 110);
+	//test.setDimensions(10 + (sin(islow) + 1) / 2 * 110, 10 + (sin(islow) + 1) / 2 * 110);
 
 	float ii = i;
 
 	test.setDrawColor(color);
 
-	for(int16_t d = 4; d <= test.GetW()/2; d +=6){
+	for(int16_t d = 4; d <= test.GetW()/2; d +=4) {
 
 		test.drawCircle(
 			test.GetW()/2 + cos(ii) * test.GetW()/4,
 			test.GetH()/2 + sin(ii) * test.GetH()/4,
 			d);
 	}
+	/* draw rectangular target pattern */
 
-	test.setDrawColor((c_hex_t)0xFFFFFFFF);
-	test.fillRect(0, 0, BOX_SIZE, BOX_SIZE);	// 	bottom left - RED
-
-	test.setDrawColor((c_hex_t)0x00FF00);
-	test.fillRect(test.GetW() - BOX_SIZE, 0, BOX_SIZE, BOX_SIZE);	//	bottom right - GREEN
-
-	test.setDrawColor((c_hex_t)0x0000FF);
-	test.fillRect(0, test.GetH() - BOX_SIZE, BOX_SIZE, BOX_SIZE);	//	top left - BLUE
-
-	test.setDrawColor((c_hex_t)0xFF00FF);
-	test.fillRect(test.GetW() - BOX_SIZE, test.GetH() - BOX_SIZE, BOX_SIZE, BOX_SIZE);	//	top right - PURPLE
-
-/*
-	wucy_gfx_DrawBox(&SquareTest, 0xFF0000, REF_BOTTOM_L, 	0, 				0, 				10, 10);
-	wucy_gfx_DrawBox(&SquareTest, 0x00FF00, REF_BOTTOM_R, 	DISP_RANGE_H, 	0, 				10, 10); 		//	bottom right - GREEN
-	wucy_gfx_DrawBox(&SquareTest, 0x0000FF, REF_TOP_L, 		0, 				DISP_RANGE_W, 	10, 10); 		//	top left - BLUE
-	wucy_gfx_DrawBox(&SquareTest, 0xFF00FF, REF_TOP_R, 		DISP_RANGE_H, 	DISP_RANGE_W, 	10, 10);
-*/
-
-	for(int16_t d = 4; d <= test.GetW()/2; d +=6){
+	for(int16_t d = 4; d <= test.GetW()/2; d +=4){
 
 
 		test.drawRect(
@@ -222,15 +300,69 @@ static void ui_draw_test(void * p) {
 			d, d);
 	}
 
+	test.setDrawColor(COLOR_RED);
+	test.fillRect(0, 0, BOX_SIZE, BOX_SIZE);	// 	bottom left - RED
+
+	test.setDrawColor(COLOR_GREEN);
+	test.fillRect(test.GetW() - BOX_SIZE, 0, BOX_SIZE, BOX_SIZE);	//	bottom right - GREEN
+
+	test.setDrawColor(COLOR_BLUE);
+	test.fillRect(0, test.GetH() - BOX_SIZE, BOX_SIZE, BOX_SIZE);	//	top left - BLUE
+
+	test.setDrawColor(COLOR_PURPLE);
+	test.fillRect(test.GetW() - BOX_SIZE, test.GetH() - BOX_SIZE, BOX_SIZE, BOX_SIZE);	//	top right - PURPLE
+
+
+
+	char numStr[20];
+	sprintf(numStr, "num: %d", 132);
+
+	test.setFont(&FreeMono12pt7b);
+	test.setTextSize(1);
+	test.setTextColor(COLOR_RED);
+	test.setCursor(10, 10);
+	test.print(numStr);
+
 	test.setDrawColor(COLOR_TEAL);
 	test.drawFrame(2);
 
 }
 
-#include<cstdio>
-#include "spook.h"
 
-static void ui_draw_background(void * p) {
+#include "Picopixel.h"
+
+void ui_draw_text(void * p) {
+
+//	Window * wnd = (Window*)p;
+
+//
+//
+//	wnd->setTransperancy(1);
+//
+//	wnd->setFont(NULL);
+//
+//	wnd->setTextColor(COLOR_BLUE, COLOR_AQUA);
+//	wnd->setCursor(0, 6 + 10 + (cos(islow) + 1) / 2 * 50);
+//	wnd->setTextSize(1);
+//	wnd->setTextColor(COLOR_WHITE);
+//	wnd->setTextWrap(1);
+//
+//	wnd->print("Edward Snowden is an American "
+//			"whistleblower who copied and "
+//			"leaked highly classified information "
+//			"from the National Security Agency in "
+//			"2013 when he was a Central Intelligence "
+//			"Agency employee and subcontractor. "
+//			"His new book Permanent Record is "
+//			"now available.\0");
+
+}
+
+
+
+//#include "spook.h"
+
+//static void ui_draw_background(void * p) {
 
 
 //	bg.setDrawColor(COLOR_YELLOW);
@@ -244,24 +376,24 @@ static void ui_draw_background(void * p) {
 //		}
 //	}
 
-uint32_t color = 0xFF000000;
-uint32_t add = spook[0x0A];
-
-	for(uint8_t y = 127; y; y --) {
-
-		for(uint8_t x = 0; x < 128; x ++) {
-
-
-			color = *(uint32_t *)(spook + add);
-
-			color |= 0xFF000000;
-			add += 3;
-
-			background.setDrawColor((c_hex_t)color);
-			background.drawDot(x, y);
-
-		}
-	}
+//uint32_t color = 0xFF000000;
+//uint32_t add = spook[0x0A];
+//
+//	for(uint8_t y = 127; y; y --) {
+//
+//		for(uint8_t x = 0; x < 128; x ++) {
+//
+//
+//			color = *(uint32_t *)(spook + add);
+//
+//			color |= 0xFF000000;
+//			add += 3;
+//
+//			background.setDrawColor((c_hex_t)color);
+//			background.drawDot(x, y);
+//
+//		}
+//	}
 
 //	bg.setCursor(5, 70);
 //	bg.setTextSize(2);
@@ -272,36 +404,8 @@ uint32_t add = spook[0x0A];
 
 
 	//background.drawBitmap(0, 0, spook, 128, 128);
-}
+//}
 
-#include "Picopixel.h"
-
-void ui_draw_text(void * p) {
-
-	Window * wnd = (Window*)p;
-
-
-
-	wnd->setTransperancy(1);
-
-	wnd->setFont(NULL);
-
-	wnd->setTextColor(COLOR_BLUE, COLOR_AQUA);
-	wnd->setCursor(0, 6 + 10 + (cos(islow) + 1) / 2 * 50);
-	wnd->setTextSize(1);
-	wnd->setTextColor(COLOR_WHITE);
-	wnd->setTextWrap(1);
-
-	wnd->print("Edward Snowden is an American "
-			"whistleblower who copied and "
-			"leaked highly classified information "
-			"from the National Security Agency in "
-			"2013 when he was a Central Intelligence "
-			"Agency employee and subcontractor. "
-			"His new book Permanent Record is "
-			"now available.\0");
-
-}
 
 
 //
@@ -386,7 +490,8 @@ void ui_draw_text(void * p) {
 //		if(i > 6.28)i -= 6.28;
 //		ucg_DrawLine(&ucg, 64, 64, 64 + cos(i)*91, 64 + sin(i)*91);
 
-//	}
+
+
 
 
 

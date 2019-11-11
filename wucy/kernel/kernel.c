@@ -38,29 +38,52 @@
 
 void wucy_ui_Init(void); /* extern from ui.cpp */
 
-void wucy_sys_Init(void * p) {
+void wucy_system(void * p) {
 
-	/* for debug */
-	wucy_hal_PinOutputInit(25);
-	wucy_hal_PinWrite(25, 0);
+	/* debug init */
 
-	wucy_hal_PinOutputInit(26);
-	wucy_hal_PinWrite(26, 0);
+//	wucy_hal_PinInit(25, W_PIN_DIR_OUTPUT, W_PIN_PULL_DOWN);
+//	wucy_hal_PinWrite(25, 0);
+//
+//	wucy_hal_PinInit(26, W_PIN_DIR_OUTPUT, W_PIN_PULL_DOWN);
+//	wucy_hal_PinWrite(26, 0);
 
-	wucy_hal_PinOutputInit(27);
+	wucy_hal_PinInit(27, W_PIN_DIR_OUTPUT, W_PIN_PULL_DOWN);
 	wucy_hal_PinWrite(27, 0);
+
+
+
+	/* system init */
 
 	wucy_disp_Init();
 
 	wucy_ui_Init();
 
 
+
+	/* system routine */
+
+	// !!!!! pin 2 used for SD card DAT0
+
+//	wucy_hal_PinInit(2, W_PIN_DIR_OUTPUT, W_PIN_PULL_FLOATING);
+//	wucy_hal_PinWrite(2, 0);
+
+	uint8_t heartbeat = 0;
+
+	while(1) {
+//
+//		wucy_hal_PinWrite(2, heartbeat ^= 1);
+
+		vTaskDelay(250 / portTICK_PERIOD_MS);
+	}
+
 	vTaskDelete(NULL);
+
 }
 
 void wucy_Start(void){
 
-	xTaskCreate(wucy_sys_Init, "sys_init\0", 1024*3, NULL, WUCY_KERNEL_MAX_PRIOR, NULL);
+	xTaskCreate(wucy_system, "wucy_sys\0", 1024*3, NULL, WUCY_KERNEL_MAX_PRIOR, NULL);
 
 }
 

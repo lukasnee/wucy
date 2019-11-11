@@ -133,16 +133,6 @@ public:
 
 
 
-typedef enum{
-
-	FPS_LEFT_TOP_CORNER,
-	FPS_RIGHT_TOP_CORNER,
-	FPS_LEFT_BOTTOM_CORNER,
-	FPS_RIGHT_BOTTOM_CORNER,
-
-} fps_draw_e;
-
-
 
 class Window : public Geo, public Adafruit_GFX {
 
@@ -176,12 +166,13 @@ public:
     uint8_t 		getLayer() { return layer; };
 
 
-    Window(gfx_pos_t w, gfx_pos_t h, uint8_t pixelSize);
+    Window(gfx_pos_t w, gfx_pos_t h, uint8_t pixelSize, wnd_fcn_t fcn = NULL);
     ~Window();
 
 	  void 			startWrite(void);
 	  void         	clearAll(void);
-	  void         	setDisplay(void);
+	  void         	setAll(void);
+	  void 			fillAll(c_hex_t color);
 //	  void         	invertDisplay(boolean i);
 
 	  void         	drawPixel(int16_t x, int16_t y, pixelData_t color);
@@ -229,6 +220,18 @@ typedef enum{ FPS_LIMITER_RESET = 0,
 
 #define MAX_AVAILABLE_FPS 255
 #define COUNTER_REFRESH_RATE_IN_MS 1000
+
+
+
+
+typedef enum{
+
+	FPS_LEFT_TOP_CORNER,
+	FPS_RIGHT_TOP_CORNER,
+	FPS_LEFT_BOTTOM_CORNER,
+	FPS_RIGHT_BOTTOM_CORNER,
+
+} fps_draw_e;
 
 typedef struct {
 
@@ -291,7 +294,7 @@ public:
 
 	~Mainframe();
 
-	int8_t addWindow(Window * wnd, wnd_fcn_t WndDrawFcn, uint8_t l = LAYER_VERY_TOP, gfx_pos_t x = 0, gfx_pos_t y = 0);
+	int8_t addWindow(Window * wnd, uint8_t l = LAYER_VERY_TOP, gfx_pos_t x = 0, gfx_pos_t y = 0);
 	int8_t removeWindow(Window * wnd);
 
 	int8_t framingStart(uint8_t fps = 0);
@@ -320,7 +323,7 @@ private:
 public:
 
 	static void fpsLimiterExpired();
-	static void fpsCount();
+	static void fpsCalculate();
 	static void setFpsMarkPos(fps_draw_e pos) { fps.pos = pos; };
 	static fps_draw_e getFpsMarkPos() { return fps.pos; };
 	static void fpsShow() { fps.show = 1; };

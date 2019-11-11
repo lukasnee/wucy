@@ -177,10 +177,17 @@ int8_t ssd1351_InitViaSPI(ssd1351_t * disp, ssd1351_spi_t * interface) {
 		disp->Pin.SPI = interface;
 		disp->Status.Interface = SSD1351_IF_SPI;
 
-		wucy_hal_PinOutputInit(disp->Pin.SPI->RES);
-		wucy_hal_PinOutputInit(disp->Pin.SPI->CS);
-		wucy_hal_PinOutputInit(disp->Pin.SPI->DC);
-		wucy_hal_PinOutputInit(disp->Pin.SPI->EN);
+		wucy_hal_PinInit(disp->Pin.SPI->RES, W_PIN_DIR_OUTPUT, W_PIN_PULL_DOWN);
+		wucy_hal_PinInit(disp->Pin.SPI->DC, W_PIN_DIR_OUTPUT, W_PIN_PULL_DOWN);
+		wucy_hal_PinInit(disp->Pin.SPI->EN, W_PIN_DIR_OUTPUT, W_PIN_PULL_DOWN);
+
+		 /* exception if chip select is unused for case when
+		  * only single device on SPI bus. CS should be tied
+		  * active(low) on slave by hardware... */
+		if(disp->Pin.SPI->CS != -1)	{
+
+			wucy_hal_PinInit(disp->Pin.SPI->CS, W_PIN_DIR_OUTPUT, W_PIN_PULL_DOWN);
+		}
 
 		wucy_hal_SPI_Init();
 
@@ -201,12 +208,19 @@ int8_t ssd1351_InitVia8080(ssd1351_t * disp, ssd1351_8_bit_parallel_t * interfac
 		disp->Pin.Prll = interface;
 		disp->Status.Interface = SSD1351_IF_8_BIT;
 
-		wucy_hal_PinOutputInit(disp->Pin.Prll->RES);
-		wucy_hal_PinOutputInit(disp->Pin.Prll->CS);
-		wucy_hal_PinOutputInit(disp->Pin.Prll->DC);
-		wucy_hal_PinOutputInit(disp->Pin.Prll->EN);
-		wucy_hal_PinOutputInit(disp->Pin.Prll->WR);
-		wucy_hal_PinOutputInit(disp->Pin.Prll->RD);
+		wucy_hal_PinInit(disp->Pin.Prll->RES, W_PIN_DIR_OUTPUT, W_PIN_PULL_DOWN);
+		wucy_hal_PinInit(disp->Pin.Prll->DC, W_PIN_DIR_OUTPUT, W_PIN_PULL_DOWN);
+		wucy_hal_PinInit(disp->Pin.Prll->EN, W_PIN_DIR_OUTPUT, W_PIN_PULL_DOWN);
+		wucy_hal_PinInit(disp->Pin.Prll->WR, W_PIN_DIR_OUTPUT, W_PIN_PULL_DOWN);
+		wucy_hal_PinInit(disp->Pin.Prll->RD, W_PIN_DIR_OUTPUT, W_PIN_PULL_DOWN);
+
+		 /* exception if chip select is unused for case when
+		  * only single device on SPI bus. CS should be tied
+		  * active(low) on slave by hardware... */
+		if(disp->Pin.Prll->CS != -1) {
+
+			wucy_hal_PinInit(disp->Pin.Prll->CS, W_PIN_DIR_OUTPUT, W_PIN_PULL_DOWN);
+		}
 
 		wucy_hal_Parallel_Init();
 

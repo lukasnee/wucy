@@ -41,13 +41,17 @@ ssd1351_t ssd1351;
 
 ssd1351_spi_t ssd1351_Interface = {
 
-	.CLK = 19,
+	.CLK = 	19,
+	.RES = 	21,
+	.DC = 	22,
 	.MOSI = 23,
 	.MISO = -1, /* -1 for "not used" */
-	.CS = 22,
-	.DC = 21,
-	.RES = 18,
-	.EN = -1	/* -1 for "not used" */
+	.EN = 	-1,	/* -1 for "not used" */
+	.CS = 	-1 	/* used to be 22, but because this OLED will constantly
+				stream data at full speed, no other device should be
+				conencted, therefore chip select pin becomes
+				redunant and should be just tied to ground. */
+
 };
 
 

@@ -52,6 +52,8 @@
 
 
 
+
+
 /* ================================================================================ */
 /* |								Common HAL									  |	*/
 /* |							(Must be filled in)								  |	*/
@@ -62,11 +64,13 @@
  * @param 	pin Pin to initialize.
  *
  */
-inline void wucy_hal_PinOutputInit(uint32_t pin) {
+inline void wucy_hal_PinInit(uint32_t pin, w_pin_dir_e direction, w_pin_pull_e pull_mode) {
 
 	/* USER CODE START */
 
-	gpio_set_direction(pin, GPIO_MODE_OUTPUT);
+	gpio_set_direction((int32_t)pin, (gpio_mode_t)direction);
+	gpio_set_pull_mode((int32_t)pin, (gpio_pull_mode_t) pull_mode);
+
 
 	/* USER CODE END */
 
@@ -77,7 +81,7 @@ inline void wucy_hal_PinOutputInit(uint32_t pin) {
 
 
 
-/* @brief 	Write digital output GPIO pin.
+/* @brief 	Write digital output to GPIO.
  *
  * @param[in] disp Display handler.
  * @param[in] pin number to write.
@@ -95,6 +99,21 @@ inline void wucy_hal_PinWrite(uint32_t pin, uint8_t state) {
 
 }
 
+
+
+
+/* @brief 	Read digital output from GPIO.
+ *
+ * @param[in] disp Display handler.
+ *
+ * @return pin state: 0(GND) or 1(VCC)
+ *
+ */
+uint8_t wucy_hal_PinRead(uint32_t pin) {
+
+	return gpio_get_level(pin);
+
+}
 
 
 
@@ -139,7 +158,7 @@ inline void wucy_hal_DelayMs(uint32_t ms) {
  * @return 	pointer to allocated memory block.
  *
  */
-inline void * wucy_hal_Malloc(malloc_type_e malloc_type, uint32_t size) {
+inline void * wucy_hal_Malloc(w_malloc_type_e malloc_type, uint32_t size) {
 
  /* Use VRAM_SIZE definition as size for memory allocation  */
 
@@ -190,19 +209,25 @@ inline void * wucy_hal_Malloc(malloc_type_e malloc_type, uint32_t size) {
 
 //#include "esp_heap_caps.h"
 
+/* todo pin should be defined in ssd1351 lib and
+ * referenced here in spi_bus_config_t and spi_pre_transfer_callback etc. */
+
 spi_transaction_t spi_transaction;
 esp_err_t retval;
-spi_device_handle_t spi_oled;
+
 
 esp_err_t ret;
 
 spi_bus_config_t buscfg = {
-    .miso_io_num = -1,
+
+	.max_transfer_sz = DISP_FRAMEBUFF_SIZE,
 	.mosi_io_num = 23,
 	.sclk_io_num = 19,
+
+    .miso_io_num = -1,
     .quadwp_io_num = -1,
     .quadhd_io_num = -1,
-    .max_transfer_sz = DISP_FRAMEBUFF_SIZE
+
 };
 
 
@@ -210,8 +235,11 @@ spi_bus_config_t buscfg = {
 void spi_pre_transfer_callback(spi_transaction_t *t)
 {
 	uint8_t dc = (uint8_t)t->user;
-    gpio_set_level(21, dc);  /*todo figure out what to do before spi message */
+    gpio_set_level(22, dc);  /*todo figure out what to do before spi message */
 }
+
+
+spi_device_handle_t spi_oled;
 
 spi_device_interface_config_t devcfg = {
 
@@ -219,7 +247,7 @@ spi_device_interface_config_t devcfg = {
     .mode = 0,                                				//SPI mode 0
     .queue_size = 1,                          				//We want to be able to queue 7 transactions at a time
     .pre_cb = spi_pre_transfer_callback,  					//Specify pre-transfer callback to handle D/C line
-	.spics_io_num = 22, 									/* CS pin */
+	.spics_io_num = -1, 									/* CS pin */
 };
 
 
@@ -239,9 +267,12 @@ inline void wucy_hal_SPI_Init(void) {
 	 */
 	/* USER CODE START */
 
-	spi_bus_initialize(HSPI_HOST, &buscfg, 1);
+	spi_bus_initialize(VSPI_HOST, &buscfg, 1); /* using SPI3 and dma channel 1 */
 
-	spi_bus_add_device(HSPI_HOST, &devcfg, &spi_oled);
+	spi_bus_add_device(VSPI_HOST, &devcfg, &spi_oled);
+
+	//spi_bus_initialize(HSPI_HOST,
+
 
 	/* USER CODE END */
 

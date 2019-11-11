@@ -34,15 +34,20 @@
 extern "C" {
 #endif
 
-typedef enum{ MALLOC_SIMPLE, MALLOC_SPECIALIZED_DMA}malloc_type_e;
+typedef enum{ MALLOC_SIMPLE, MALLOC_SPECIALIZED_DMA} w_malloc_type_e;
+
+typedef enum {W_PIN_DIR_DISABLED = 0, W_PIN_DIR_INPUT, W_PIN_DIR_OUTPUT} w_pin_dir_e;
+
+typedef enum {W_PIN_PULL_UP = 0, W_PIN_PULL_DOWN, W_PIN_PULL_UP_DOWN, W_PIN_PULL_FLOATING} w_pin_pull_e;
 
 /* HAL (lower abstraction) layer  */
 
 /* Common User HAL */
-void wucy_hal_PinOutputInit(uint32_t pin);
+void wucy_hal_PinInit(uint32_t pin, w_pin_dir_e direction, w_pin_pull_e pull_mode);
 void wucy_hal_PinWrite(uint32_t pin, uint8_t state);
+uint8_t wucy_hal_PinRead(uint32_t pin);
 void wucy_hal_DelayMs(uint32_t ms);
-void * wucy_hal_Malloc(malloc_type_e malloc_type, uint32_t size);
+void * wucy_hal_Malloc(w_malloc_type_e malloc_type, uint32_t size);
 
 /* User SPI HAL */
 void wucy_hal_SPI_Init(void);

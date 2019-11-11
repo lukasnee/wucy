@@ -24,6 +24,54 @@ typedef struct {
 	uint8_t   first;       ///< ASCII extents (first char)
         uint8_t   last;        ///< ASCII extents (last char)
 	uint8_t   yAdvance;    ///< Newline distance (y axis)
+
+	//wucy addition
+	constexpr uint8_t charMaxHeight() {
+
+		uint8_t maxHeight = 0;
+
+		if(glyph == NULL) {
+
+			return 8;
+
+		}
+		else {
+
+			for(uint16_t p = 0; p <= last - first; p++) {
+
+				if ((glyph + p)->height > maxHeight) {
+
+					maxHeight = (glyph + p)->height;
+
+				}
+			}
+		}
+		return maxHeight;
+	};
+
+	constexpr uint8_t charMaxWidth() {
+
+		uint8_t maxWidth = 0;
+
+		if(glyph == NULL) {
+
+			return 6;
+
+		}
+		else {
+
+			for(uint16_t p = 0; p <= last - first; p++) {
+
+				if ((glyph + p)->width > maxWidth) {
+
+					maxWidth = (glyph + p)->width;
+
+				}
+			}
+			return maxWidth;
+		}
+	};
+
 } GFXfont;
 
 #endif // _GFXFONT_H_

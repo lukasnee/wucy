@@ -12,6 +12,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
+#include <string>
 
 typedef uint8_t boolean;
 
@@ -21,8 +22,8 @@ public:
 
 	virtual size_t write(unsigned char c) = 0; /* get write() from Adafruit_GFX class */
 
-	void print(const char * str);
-	void println(const char * str);
+	void print(const std::string str);
+	void println(const std::string str);
 
 	virtual ~Print() {};
 };
@@ -43,6 +44,10 @@ class Adafruit_GFX : public Print {
   Adafruit_GFX(int16_t w, int16_t h); // Constructor
 
 #ifdef WUCY_OS
+
+  uint8_t getCharMaxHeight() { return gfxFont->charMaxHeight(); };
+  uint8_t getCharMaxWidth() { return gfxFont->charMaxWidth(); };
+
   virtual ~Adafruit_GFX() {}; // Deconstructor
 #endif/* WUCY_OS */
 

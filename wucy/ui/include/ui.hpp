@@ -31,6 +31,13 @@
 #ifndef WUCY_UI_INCLUDE_UI_HPP_
 #define WUCY_UI_INCLUDE_UI_HPP_
 
+#include "RotaryEncoder.h"
+#include "button.hpp"
+#include "object.hpp"
+
 extern "C" void wucy_ui_Init(void);
+
+extern RotaryEncoder ROTEN;
+extern button_t ROTEN_OK;
 
 #endif /* WUCY_UI_INCLUDE_UI_HPP_ */
