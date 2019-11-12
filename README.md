@@ -1,8 +1,8 @@
-# WUCY - Open Source Retro Watch
+Context: this repository is FOSS for project wucy - wucyOS (currently in early developement state). WucyOS is developed on ESP32 ESP-IDF framework, although it is designed for portability. WucyOS involves FreeRTOS featuring minimalist custom kernel, fast color OLED, retro GUI, Wi-fi and BLE possibilities.
+
+# WUCY - Open Retro Watch
 
 `Wearable computer for nerds` 
-
-_Currently in developement state._
 
 ### Vision
 
