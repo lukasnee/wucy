@@ -50,7 +50,7 @@ using namespace std;
 
 /* inputs  */
 
-RotaryEncoder ROTEN(25, 26);
+RotaryEncoder ROTEN(26, 25);
 button_t ROTEN_OK;
 
 /* outputs  */
@@ -66,12 +66,21 @@ Window fpsMark(40, 10, DISP_PIXEL_SIZE, ui_draw_fpsMark);
 static void ui_draw_test(void * p);
 Window test(DISP_WIDTH*2/3, DISP_HEIGHT*2/3, DISP_PIXEL_SIZE, ui_draw_test);
 
-//static void ui_draw_text(void * p);
-//Window text(DISP_WIDTH, DISP_HEIGHT, DISP_PIXEL_SIZE, ui_draw_text);
+static void ui_draw_text(void * p);
+Window text(DISP_WIDTH, DISP_HEIGHT/2, DISP_PIXEL_SIZE, ui_draw_text);
+
+#include "bouncer.hpp"
+
+BouncerBox Bbox(DISP_WIDTH/2, DISP_HEIGHT/2);
 
 #include <object.hpp>
 
-OptionList menu(NULL, 20, 20, DISP_WIDTH*2/3, DISP_HEIGHT*2/3);
+
+#include <wucyFont8pt7b.h>
+#include <maniac16pt7b.h>
+#include <trixel_square4pt7b.h>
+
+OptionList menu(&wucyFont8pt7b, 20, 20, DISP_WIDTH/2, DISP_HEIGHT/2);
 
 typedef enum {
 
@@ -86,35 +95,106 @@ typedef enum {
 	OPT_DEVYNI,
 	OPT_DESIMT
 
-};
+}opts_e;
 
-#include "bouncer.hpp"
+
 #include "sd_card.hpp"
 
 
-
-BouncerBox Bbox(DISP_WIDTH, DISP_HEIGHT);
 
 /* for testing/example purpose */
 void ui_one_ms_timer(void * p);
 
 void menu_vienas_cb(void * p) {
 
-	Bbox.removeBouncers(0xFF);
+	static uint8_t toggle = 0;
+
+	toggle ^= 1;
+
+	if(toggle) {
+
+		menu.hideOption(OPT_DU);
+		menu.hideOption(OPT_TRYS);
+		menu.hideOption(OPT_KETURI);
+		menu.setOptionTitle(OPT_VIENAS, "show");
+
+	}
+	else {
+
+		menu.hideOption(OPT_DU, HIDE_FALSE);
+		menu.hideOption(OPT_TRYS, HIDE_FALSE);
+		menu.hideOption(OPT_KETURI, HIDE_FALSE);
+		menu.setOptionTitle(OPT_VIENAS, "hide");
+
+	}
 
 }
 
 void menu_du_cb(void * p) {
 
-	menu.hideOption(OPT_KETURI);
+	Bbox.addBouncers(5);
 
 }
 
 void menu_trys_cb(void * p) {
 
-	menu.hideOption(OPT_KETURI, HIDE_FALSE);
+	Bbox.removeBouncers(5);
+}
+
+void menu_keturi_cb(void * p) {
+
+
+	Bbox.removeBouncers(0xFF);
 
 }
+
+
+const GFXfont * txtfont = &wucyFont8pt7b;
+
+void menu_penki_cb(void * p) {
+
+	static uint8_t switcher = 0;
+
+	switcher++;
+	switcher %= 3;
+
+	switch(switcher) {
+
+	case 0: txtfont = &wucyFont8pt7b; break;
+	case 1: txtfont = &maniac16pt7b; break;
+	case 4: txtfont = &trixel_square4pt7b; break;
+
+
+	}
+
+}
+
+int16_t scrollBias = 0;
+
+void menu_sesi_cb(void *p) {
+
+	vTaskDelay(200);
+	while (Button_IsPressed(&ROTEN_OK)) {
+
+		vTaskDelay(20);
+		scrollBias += 1;
+		text.setRedrawRequest();
+
+	}
+}
+
+void menu_septyni_cb(void *p) {
+
+	vTaskDelay(200);
+	while (Button_IsPressed(&ROTEN_OK)) {
+
+		vTaskDelay(20);
+		scrollBias -= 1;
+		text.setRedrawRequest();
+
+	}
+}
+
 
 
 void wucy_ui_Init(void) {
@@ -122,24 +202,26 @@ void wucy_ui_Init(void) {
 //	mf.addWindow(&test, 		3, 0, 0);
 //	mf.addWindow(&background, 	1, 0, 0);
 	mf.addWindow(&fpsMark, 		255, 0, 0);
-//	mf.addWindow(&text, 		2, 0, 0);
+	mf.addWindow(&text, 		2, 0, 64, true);
 
-	mf.addWindow(&Bbox, 4, 0, 0);
+	mf.addWindow(&Bbox, 4, 64, 0);
 	//Bbox.addBouncers(50);
 
-	menu.setTitle("menu");
-	menu.addOption(0, OPT_VIENAS, "vienas", menu_vienas_cb);
-	menu.addOption(1, OPT_DU, "du", menu_du_cb);
-	menu.addOption(2, OPT_TRYS, "trys", menu_trys_cb);
-	menu.addOption(3, OPT_KETURI, "keturi", NULL);
-	menu.addOption(4, OPT_PENKI, "penki", NULL);
-	menu.addOption(5, OPT_SESI, "sesi", NULL);
-	menu.addOption(6, OPT_SEPTYNI, "septyni", NULL);
-	menu.addOption(7, OPT_ASTUONI, "astuoni", NULL);
-	menu.addOption(8, OPT_DEVYNI, "devyni", NULL);
-	menu.addOption(9, OPT_DESIMT, "desimt", NULL);
+	Bbox.addBouncers(10);
 
-	mf.addWindow(&menu, 5, 20, 20);
+	menu.setTitle("menu");
+	menu.addOption(0, OPT_VIENAS, "hide", menu_vienas_cb);
+	menu.addOption(1, OPT_DU, "+5", menu_du_cb);
+	menu.addOption(2, OPT_TRYS, "-5", menu_trys_cb);
+	menu.addOption(3, OPT_KETURI, "clean", menu_keturi_cb);
+	menu.addOption(4, OPT_PENKI, "font", menu_penki_cb);
+	menu.addOption(5, OPT_SESI, "UP", menu_sesi_cb);
+	menu.addOption(6, OPT_SEPTYNI, "DOWN", menu_septyni_cb);
+	menu.addOption(7, OPT_ASTUONI, "-", NULL);
+	menu.addOption(8, OPT_DEVYNI, "--", NULL);
+	menu.addOption(9, OPT_DESIMT, "---", NULL);
+	menu.showSelectMark();
+	mf.addWindow(&menu, 5, 0, 0);
 
 	xTaskCreate(ui_one_ms_timer, "ui_tim_1", 1024, NULL, WUCY_PRIOR_HIGHEST - 3, NULL);
 
@@ -166,7 +248,7 @@ static void ui_draw_fpsMark(void * p) {
 
 	if(mf.fpsVisable()) {
 
-		fpsMark.setFont(NULL);
+		fpsMark.setFont(&trixel_square4pt7b);
 		fpsMark.setTextColor(COLOR_WHITE, COLOR_BLACK);
 		fpsMark.setTextSize(1);
 
@@ -222,6 +304,7 @@ void ui_one_ms_timer(void * p) {
 
 		Button_TimeBaseRoutine();
 
+		menu.checkControl();
 
 		switch(ROTEN.getDirection()) {
 
@@ -263,8 +346,6 @@ void ui_one_ms_timer(void * p) {
 
 	}
 }
-
-#include "FreeMono12pt7b.h"
 
 #define BOX_SIZE 10
 
@@ -317,7 +398,7 @@ static void ui_draw_test(void * p) {
 	char numStr[20];
 	sprintf(numStr, "num: %d", 132);
 
-	test.setFont(&FreeMono12pt7b);
+	test.setFont(&wucyFont8pt7b);
 	test.setTextSize(1);
 	test.setTextColor(COLOR_RED);
 	test.setCursor(10, 10);
@@ -333,28 +414,28 @@ static void ui_draw_test(void * p) {
 
 void ui_draw_text(void * p) {
 
-//	Window * wnd = (Window*)p;
+	Window * tw = (Window*)p; /* text window */
 
-//
-//
-//	wnd->setTransperancy(1);
-//
-//	wnd->setFont(NULL);
-//
-//	wnd->setTextColor(COLOR_BLUE, COLOR_AQUA);
-//	wnd->setCursor(0, 6 + 10 + (cos(islow) + 1) / 2 * 50);
-//	wnd->setTextSize(1);
-//	wnd->setTextColor(COLOR_WHITE);
-//	wnd->setTextWrap(1);
-//
-//	wnd->print("Edward Snowden is an American "
-//			"whistleblower who copied and "
-//			"leaked highly classified information "
-//			"from the National Security Agency in "
-//			"2013 when he was a Central Intelligence "
-//			"Agency employee and subcontractor. "
-//			"His new book Permanent Record is "
-//			"now available.\0");
+	tw->fillAll(COLOR_BLACK);
+
+	tw->setFont(txtfont);
+	tw->setTransperancy(1);
+	tw->setTextSize(1);
+	tw->setTextWrap(1);
+	tw->setCursor(5, tw->getCharMaxHeight() + 5 + scrollBias, tw->GetW() - 10, tw->GetH());
+	tw->setTextColor(COLOR_YELLOW);
+
+	//tw->setCursor(0, 6 + 10 + (cos(islow) + 1) / 2 * 50);
+
+	tw->println("The quick brown fox jumps over the lazy dog");
+
+	for(uint16_t c = 0; c <= 0xFF; c++) {
+
+		tw->write(c);
+	}
+
+	tw->setDrawColor(COLOR_RED);
+	tw->drawFrame(2);
 
 }
 

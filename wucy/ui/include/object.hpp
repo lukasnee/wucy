@@ -103,7 +103,7 @@ private:
 					_colorOptFocusTxtHighlight,
 					_colorOptSelectMark;
 
-	GFXfont * 		_font;
+	const GFXfont * _font;
 
 	opt_id_t 		_optCursor,/* focus cursor option on the list */
 					_optSelected, /* Selected option */
@@ -125,7 +125,7 @@ protected:
 
 public:
 
-	OptionList(GFXfont * font, coord_t xPos, coord_t yPos, coord_t width, coord_t height);
+	OptionList(const GFXfont * f, coord_t xPos, coord_t yPos, coord_t width, coord_t height);
 	~OptionList();
 
 	void checkControl();
@@ -134,7 +134,7 @@ public:
 	int8_t addOption(position_t pos, opt_id_t id, const std::string, void (*callback)(void * p));
 	uint8_t deleteOption(uint32_t id);
 	uint8_t execute(opt_id_t id);
-	uint8_t findOption(opt_id_t id, Option * foundOption);
+	uint8_t findOption(opt_id_t id, Option*& foundOption);
 
 
 	uint8_t setOptionTitle(opt_id_t id, const std::string);
@@ -146,7 +146,7 @@ public:
 	void setTitle(const std::string title) { _title.assign(title); };
 	void hideTitle(option_hide_e state)  { _hideTitle = state; };
 	void hideFrame(option_hide_e state)  { _hideFrame = state; };
-	void showSelectMark(uint8_t state)  { _showSelectMark = state; };
+	void showSelectMark(bool state = true)  { _showSelectMark = state; };
 
 };
 

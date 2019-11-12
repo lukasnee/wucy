@@ -51,7 +51,7 @@
 
 
 OptionList::OptionList(
-	GFXfont * font,
+	const GFXfont * f,
 	coord_t xPos,
 	coord_t yPos,
 	coord_t width,
@@ -65,14 +65,14 @@ OptionList::OptionList(
 	_hideTitle(HIDE_FALSE),
 	_hideFrame(HIDE_FALSE),
 
-	_colorWndBg(COLOR_BLACK),
-	_colorWndFrame(COLOR_GREEN),
-	_colorOptTxt(COLOR_GREEN),
-	_colorOptFocusTxt(COLOR_LIME),
+	_colorWndBg(COLOR_GREEN_VERY_DARK),
+	_colorWndFrame(COLOR_GREEN_DARK),
+	_colorOptTxt(COLOR_LIME),
+	_colorOptFocusTxt(COLOR_LIME_BRIGHT),
 	_colorOptFocusTxtHighlight(COLOR_GREEN),
-	_colorOptSelectMark(COLOR_MAROON),
+	_colorOptSelectMark(COLOR_GREEN_DARK),
 
-	_font(font),
+	_font(f),
 
 	_optCursor(id_ILLEGAL()),
 	_optSelected(id_ILLEGAL()),
@@ -98,19 +98,31 @@ void OptionList::checkControl() {
 
 	uint32_t index_cursor, index_bias;
 
-	if(ROTEN.getDirection() < 0 &&
-			prevOption(_optCursor, _optCursor, SKIP_HIDDEN_TRUE) > -1 ) {
+	switch(ROTEN.getDirection()) {
 
-			setRedrawRequest();
+	case -1:
 
+		if(prevOption(_optCursor, _optCursor, SKIP_HIDDEN_TRUE) > -1 ) {
+
+				setRedrawRequest();
+
+		}
+
+		break;
+
+	case 1:
+
+		if(nextOption(_optCursor, _optCursor, SKIP_HIDDEN_TRUE) > -1) {
+
+				setRedrawRequest();
+
+		}
+
+		break;
 	}
-	else if( ROTEN.getDirection() > 0 &&
-			nextOption(_optCursor, _optCursor, SKIP_HIDDEN_TRUE) > -1){
 
-			setRedrawRequest();
 
-	}
-	else if (Button_IsTriggered(&ROTEN_OK, BTN_PRIOR_2)) {
+	if (Button_IsTriggered(&ROTEN_OK, BTN_PRIOR_2)) {
 
 		_optSelected = _optCursor;
 		_selectTriggered = true;
@@ -131,7 +143,7 @@ void OptionList::checkControl() {
 			setRedrawRequest();
 
 	}
-	else if ((index_cursor >= index_bias + _maxVisibleOpts) &&
+	else if ((index_cursor >= index_bias + _maxVisibleOpts - 1) &&
 			(nextOption(_optScrollBias, _optScrollBias, SKIP_HIDDEN_TRUE) > -1)) {
 
 		setRedrawRequest();
@@ -157,7 +169,7 @@ void OptionList::checkControl() {
 int8_t OptionList::hideOption(opt_id_t id, option_hide_e state)
 {
 
-	Option * hideOpt = NULL;
+	Option * hideOpt;
 
 	if(findOption(id, hideOpt)){
 
@@ -216,7 +228,8 @@ void OptionList::resetList(){
  * -2 - id already exists.
  * -1 - error: unable to alloacate memory for option.
  * 0 - added to given option linked list position successfully
- * 1 - option successfully pushed back (front or end).
+ * 1 - first option added successfuly.
+ * 2 - option was successfully pushed back at the end of the list.
  * */
 int8_t OptionList::addOption(position_t pos, opt_id_t id, const std::string title, void (*callback)(void * p)){
 
@@ -226,11 +239,21 @@ int8_t OptionList::addOption(position_t pos, opt_id_t id, const std::string titl
 	if(newOpt != NULL) {
 
 		/* set option as first option if no options already exists. */
-		if(_optVec.empty() || pos >= _optVec.size()) {
+		if(_optVec.empty()) {
 
 			_optVec.push_back(newOpt);
 
+			_optCursor = newOpt->_id;
+			_optScrollBias = newOpt->_id;
+
 			return 1;
+
+		}
+		else if(pos >= _optVec.size()) {
+
+			_optVec.push_back(newOpt);
+
+			return 2;
 		}
 		else{
 
@@ -258,7 +281,7 @@ int8_t OptionList::addOption(position_t pos, opt_id_t id, const std::string titl
 
 uint8_t OptionList::deleteOption(opt_id_t id) {
 
-	Option * opt = NULL;
+	Option * opt;
 	auto optCur = _optVec.cbegin();
 	uint32_t index;
 
@@ -281,11 +304,11 @@ uint8_t OptionList::deleteOption(opt_id_t id) {
 
 uint8_t OptionList::execute(opt_id_t id){
 
-	Option * opt = NULL;
+	Option * opt;
 
-	if(findOption(id, opt)) {
+	if(findOption(id, opt) && opt->_callback != NULL) {
 
-		opt->_callback(NULL);
+		opt->_callback(this);
 
 		return 1;
 
@@ -297,11 +320,11 @@ uint8_t OptionList::execute(opt_id_t id){
 
 uint8_t OptionList::setOptionTitle(opt_id_t id, const std::string title) {
 
-	Option * opt = NULL;
+	Option * opt;
 
 	if(findOption(id, opt)) {
 
-		_title.assign(title);
+		opt->_title.assign(title);
 
 		return 1;
 	}
@@ -311,7 +334,7 @@ uint8_t OptionList::setOptionTitle(opt_id_t id, const std::string title) {
 
 uint8_t OptionList::setCursorAt(opt_id_t id) {
 
-	Option * opt = NULL;
+	Option * opt;
 
 	/* if _id exists */
 	if(findOption(id, opt)) {
@@ -324,96 +347,93 @@ uint8_t OptionList::setCursorAt(opt_id_t id) {
 
 
 
-
+#define FRAME_THICKNESS (GUI_OL_MG * 2)
 void OptionList::redraw(void * p) {
 
 	OptionList * ol = (OptionList*)p;
 
-	int16_t x = 0, y = 0;
-	uint16_t w = 0, h = 0;
+	int16_t x = FRAME_THICKNESS, y = FRAME_THICKNESS;
+	uint16_t w = ol->GetW() - FRAME_THICKNESS * 2 * GUI_OL_MG,
+			h = ol->GetH() - FRAME_THICKNESS * 2 * GUI_OL_MG;
 
 	uint8_t listLine = 0; /* visible options' vertical cursor, used to limit drawing inside window. */
 
 /* render window */
 
+	ol->fillAll(ol->_colorWndBg);
+
 	/* calculate how many options can fit in window
 	 * at the moment (depends on font's and window's dimensions) */
 
-	/*font of option list
-	 * todo porrt u8g2_font_blipfest_07_tr);
-	 * //API_SetFont(u8g2_font_6x10_tr); */
 	ol->setFont(ol->_font);
 	ol->setTextSize(1);
+	ol->setTextWrap(0);
 
-	uint8_t maxCharHeight = ol->getCharMaxHeight();
-	uint8_t titleHeigh = ol->_hideTitle ? 0 : maxCharHeight;
-
-	ol->_maxVisibleOpts = (h - 2 * GUI_OL_MG - titleHeigh) / (maxCharHeight + 1);
-
-	ol->setDrawColor(ol->_colorWndFrame);
-	ol->drawFrame(2);
+	/* title height */
+	uint8_t heightTitle = ol->_hideTitle ? 0 : ol->getCharMaxHeight();
+	ol->_maxVisibleOpts = 2 + (h - heightTitle) / (ol->getCharMaxHeight());
 
 	/* render title */
 	if (!ol->_hideTitle) {
 
 		/* draw title box */
 		ol->setDrawColor(ol->_colorWndFrame);
-		ol->fillRect(x + 1, y + 1, w - 2, maxCharHeight);
+		ol->fillRect(x, y, w, ol->getCharMaxHeight());
 
 		/* print title in title bow */
-		ol->setDrawColor(ol->_colorOptTxt);
-		ol->setCursor(x + 2 * GUI_OL_MG, y + titleHeigh);
+		ol->setTextColor(ol->_colorOptTxt);
+		ol->setCursor(x + 2 * GUI_OL_MG, y + heightTitle - 2 * GUI_OL_MG);
 		ol->print(ol->_title);
+
+		y += heightTitle - 2 * GUI_OL_MG;
+
 	}
 
 	/* draw option if it is in the visible list range and list has elements*/
 
 	uint32_t scrollbiasIndex;
+	ol->indexOfOption(ol->_optScrollBias, scrollbiasIndex);
 
-	auto optCur = ol->_optVec.cbegin();
-
-	ol->indexOfOption((*optCur)->_id, scrollbiasIndex);
-
-	for (optCur += scrollbiasIndex;
+	for (auto optCur = ol->_optVec.cbegin() + scrollbiasIndex;
 			(optCur != ol->_optVec.end()) && (listLine < ol->_maxVisibleOpts);
 			++optCur) {
 
-		x += 2 * GUI_OL_MG;
-		y += 2 * GUI_OL_MG + titleHeigh + listLine * (maxCharHeight + GUI_OL_MG);
+		if((*optCur)->_hide == HIDE_FALSE) {
 
-		/* draw cursor box */
-		if ((*optCur)->_id == ol->_optCursor) {
+			/* draw cursor box */
+			if ((*optCur)->_id == ol->_optCursor) {
 
-			w -= - 4 * GUI_OL_MG;
-			h = maxCharHeight + 1 * GUI_OL_MG;
+				ol->setDrawColor(ol->_colorOptFocusTxtHighlight);
+				ol->fillRect(x, y + 2 * GUI_OL_MG, w, ol->getCharMaxHeight());
+			}
+			/* draw select marker */
 
-			ol->setDrawColor(ol->_colorOptFocusTxtHighlight);
-			ol->fillRect(x, y, w, h);
+			if (ol->_showSelectMark && (*optCur)->_id == ol->_optSelected) {
+
+				ol->setDrawColor(ol->_colorOptSelectMark);
+				ol->fillRect(w - ol->getCharMaxHeight()/4 + 3 * GUI_OL_MG,
+					y + 3 * GUI_OL_MG,
+					ol->getCharMaxHeight()/4 - 2 * GUI_OL_MG,
+					ol->getCharMaxHeight() - 2 * GUI_OL_MG);
+			}
+
+			/* draw option title */
+			y += ol->getCharMaxHeight();
+
+			ol->setTextColor(ol->_colorOptFocusTxt);
+			ol->setCursor(x + 1, y + 1);
+			ol->print((*optCur)->_title);
+
+
+
+			listLine++;
+
 		}
-
-		/* draw option title */
-		x += 1 * GUI_OL_MG;
-		y += maxCharHeight;
-
-		ol->setDrawColor(ol->_colorOptFocusTxtHighlight);
-		ol->setCursor(x, y);
-		ol->print((*optCur)->_title);
-
-		/* draw select marker */
-		if (ol->_showSelectMark && (*optCur)->_id == ol->_optSelected) {
-
-			x = x + w - maxCharHeight - 2 * GUI_OL_MG;
-			y = y + 3 * GUI_OL_MG + titleHeigh + listLine * (maxCharHeight + 1 * GUI_OL_MG);
-			w = maxCharHeight - 1 * GUI_OL_MG;
-			h = maxCharHeight - 1 * GUI_OL_MG;
-
-			ol->setDrawColor(ol->_colorOptSelectMark);
-			ol->fillRect(x, y, w, h);
-		}
-
-		listLine++;
-
 	}
+
+	ol->setDrawColor(ol->_colorWndFrame);
+	ol->drawFrame(FRAME_THICKNESS);
+
 }
 
 
@@ -446,7 +466,7 @@ uint8_t OptionList::indexOfOption(opt_id_t id, uint32_t& index) {
 
 
 
-uint8_t OptionList::findOption(opt_id_t id, Option * foundOption) {
+uint8_t OptionList::findOption(opt_id_t id, Option*& foundOption) {
 
 	uint32_t index;
 
@@ -460,7 +480,7 @@ uint8_t OptionList::findOption(opt_id_t id, Option * foundOption) {
 		return 1; /* success: option found */
 
 	}
-	id = foundOption->_id;
+
 	foundOption = NULL;
 
 	return 0; /* error: option not found */
@@ -487,10 +507,8 @@ int8_t OptionList::nextOption(opt_id_t thisid, opt_id_t& nextid, skip_hid_e skip
 	/* if _id exists */
 	if(indexOfOption(thisid, index)) {
 
-		auto optCur = _optVec.cbegin();
-
-		/* iterate forward from its index */
-		for (optCur += index + 1; optCur != _optVec.cend(); ++optCur) {
+		/* increment (to previous) position, check if it is not the end, else cycle forward */
+		for (auto optCur = _optVec.cbegin() + ++index; optCur != _optVec.cend(); ++optCur) {
 
 			/* return id of closest forward neighbour that is not hidden */
 
@@ -502,7 +520,7 @@ int8_t OptionList::nextOption(opt_id_t thisid, opt_id_t& nextid, skip_hid_e skip
 			}
 		}
 
-		return -1; /* error: there is no next available option */
+		return -1; /* error: there is no previous available option */
 
 	}
 
@@ -529,10 +547,8 @@ int8_t OptionList::prevOption(opt_id_t thisid, opt_id_t& previd, skip_hid_e skip
 	/* if _id exists */
 	if(indexOfOption(thisid, index)) {
 
-		auto optCur = _optVec.cbegin();
-
-		/* iterate forward from its index */
-		for (optCur += index - 1; optCur != _optVec.cbegin(); --optCur) {
+		/* increment (to previous) position, check if it is not the end, else cycle forward */
+		for (auto optCur = _optVec.crend() - index; optCur != _optVec.crend(); ++optCur) {
 
 			/* return id of closest forward neighbour that is not hidden */
 

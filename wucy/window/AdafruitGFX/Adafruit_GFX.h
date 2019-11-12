@@ -3,12 +3,8 @@
 
 #define WUCY_OS
 
-#if ARDUINO >= 100
- #include "Arduino.h"
- #include "Print.h"
-#elif defined(WUCY_OS)
-
 #define PROGMEM /* override */
+
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
@@ -23,18 +19,13 @@ public:
 	virtual size_t write(unsigned char c) = 0; /* get write() from Adafruit_GFX class */
 
 	void print(const std::string str);
-	void println(const std::string str);
+	void println(const std::string str = "\0");
 
 	virtual ~Print() {};
 };
 
 
-
-
-#else
- #include "WProgram.h"
-#endif
-#include "../../window/AdafruitGFX/gfxfont.h"
+#include "gfxfont.h"
 
 /// A generic graphics superclass that can handle all sorts of drawing. At a minimum you can subclass and provide drawPixel(). At a maximum you can do a ton of overriding to optimize. Used for any/all Adafruit displays!
 class Adafruit_GFX : public Print {
@@ -133,12 +124,6 @@ class Adafruit_GFX : public Print {
 	      uint16_t bg, uint8_t size_x, uint8_t size_y),
     getTextBounds(const char *string, int16_t x, int16_t y,
       int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h),
-#ifndef WUCY_OS
-    getTextBounds(const __FlashStringHelper *s, int16_t x, int16_t y,
-      int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h),
-    getTextBounds(const String &str, int16_t x, int16_t y,
-      int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h),
-#endif/* WUCY_OS */
     setTextSize(uint8_t s),
     setTextSize(uint8_t sx, uint8_t sy),
     setFont(const GFXfont *f = NULL);
@@ -150,7 +135,13 @@ class Adafruit_GFX : public Print {
     @param  y    Y coordinate in pixels
   */
   /**********************************************************************/
-  void setCursor(int16_t x, int16_t y) { cursor_x = x; cursor_y = y; }
+  void setCursor(int16_t x, int16_t y, int16_t bound_w = 0, int16_t bound_h = 0) {
+	  cursor_x = _cursor_offset_x = x;
+	  cursor_y = _cursor_offset_y = y;
+
+	  _cursor_bound_w = bound_w ? bound_w : _width;
+	  _cursor_bound_h = bound_h ? bound_h : _height;
+  }
 
   /**********************************************************************/
   /*!
@@ -199,14 +190,7 @@ class Adafruit_GFX : public Print {
   /**********************************************************************/
   void cp437(boolean x=true) { _cp437 = x; }
 
-#if ARDUINO >= 100
-  virtual size_t write(uint8_t);
-#elif defined(WUCY_OS)
   size_t write(unsigned char c);
-
-#else
-  virtual void   write(uint8_t);
-#endif
 
   /************************************************************************/
   /*!
@@ -261,7 +245,11 @@ class Adafruit_GFX : public Print {
     _width,         ///< Display width as modified by current rotation
     _height,        ///< Display height as modified by current rotation
     cursor_x,       ///< x location to start print()ing text
-    cursor_y;       ///< y location to start print()ing text
+    cursor_y,       ///< y location to start print()ing text
+  	_cursor_offset_x,
+	_cursor_offset_y,
+  	_cursor_bound_w,
+	_cursor_bound_h;
   uint16_t
   	drawcolor, 		///< 16-bit color for draw functions
     textcolor,      ///< 16-bit background color for print()
@@ -276,118 +264,5 @@ class Adafruit_GFX : public Print {
   GFXfont
     *gfxFont;       ///< Pointer to special font
 };
-
-#ifndef WUCY_OS
-/// A simple drawn button UI element
-class Adafruit_GFX_Button {
-
- public:
-  Adafruit_GFX_Button(void);
-  // "Classic" initButton() uses center & size
-  void initButton(Adafruit_GFX *gfx, int16_t x, int16_t y,
-   uint16_t w, uint16_t h, uint16_t outline, uint16_t fill,
-   uint16_t textcolor, char *label, uint8_t textsize);
-  void initButton(Adafruit_GFX *gfx, int16_t x, int16_t y,
-   uint16_t w, uint16_t h, uint16_t outline, uint16_t fill,
-   uint16_t textcolor, char *label, uint8_t textsize_x, uint8_t textsize_y);
-  // New/alt initButton() uses upper-left corner & size
-  void initButtonUL(Adafruit_GFX *gfx, int16_t x1, int16_t y1,
-   uint16_t w, uint16_t h, uint16_t outline, uint16_t fill,
-   uint16_t textcolor, char *label, uint8_t textsize);
-  void initButtonUL(Adafruit_GFX *gfx, int16_t x1, int16_t y1,
-   uint16_t w, uint16_t h, uint16_t outline, uint16_t fill,
-   uint16_t textcolor, char *label, uint8_t textsize_x, uint8_t textsize_y);
-  void drawButton(boolean inverted = false);
-  boolean contains(int16_t x, int16_t y);
-
-  /**********************************************************************/
-  /*!
-    @brief    Sets button state, should be done by some touch function
-    @param    p  True for pressed, false for not.
-  */
-  /**********************************************************************/
-  void press(boolean p) { laststate = currstate; currstate = p; }
-
-  boolean justPressed();
-  boolean justReleased();
-
-  /**********************************************************************/
-  /*!
-    @brief    Query whether the button is currently pressed
-    @returns  True if pressed
-  */
-  /**********************************************************************/
-  boolean isPressed(void) { return currstate; };
-
- private:
-  Adafruit_GFX *_gfx;
-  int16_t       _x1, _y1; // Coordinates of top-left corner
-  uint16_t      _w, _h;
-  uint8_t       _textsize_x;
-  uint8_t       _textsize_y;
-  uint16_t      _outlinecolor, _fillcolor, _textcolor;
-  char          _label[10];
-
-  boolean currstate, laststate;
-};
-
-/// A GFX 1-bit canvas context for graphics
-class GFXcanvas1 : public Adafruit_GFX {
- public:
-  GFXcanvas1(uint16_t w, uint16_t h);
-  ~GFXcanvas1(void);
-  void     drawPixel(int16_t x, int16_t y),
-           fillScreen(uint16_t color);
-  /**********************************************************************/
-  /*!
-    @brief    Get a pointer to the internal buffer memory
-    @returns  A pointer to the allocated buffer
-  */
-  /**********************************************************************/
-  uint8_t *getBuffer(void) const { return buffer; }
- private:
-  uint8_t *buffer;
-};
-
-
-/// A GFX 8-bit canvas context for graphics
-class GFXcanvas8 : public Adafruit_GFX {
- public:
-  GFXcanvas8(uint16_t w, uint16_t h);
-  ~GFXcanvas8(void);
-  void     drawPixel(int16_t x, int16_t y),
-           fillScreen(uint16_t color),
-           writeFastHLine(int16_t x, int16_t y, int16_t w);
-  /**********************************************************************/
-  /*!
-   @brief    Get a pointer to the internal buffer memory
-   @returns  A pointer to the allocated buffer
-  */
-  /**********************************************************************/
-  uint8_t *getBuffer(void) const { return buffer; }
- private:
-  uint8_t *buffer;
-};
-
-///  A GFX 16-bit canvas context for graphics
-class GFXcanvas16 : public Adafruit_GFX {
- public:
-  GFXcanvas16(uint16_t w, uint16_t h);
-  ~GFXcanvas16(void);
-  void      drawPixel(int16_t x, int16_t y),
-            fillScreen(uint16_t color),
-            byteSwap(void);
-  /**********************************************************************/
-  /*!
-    @brief    Get a pointer to the internal buffer memory
-    @returns  A pointer to the allocated buffer
-  */
-  /**********************************************************************/
-  uint16_t *getBuffer(void) const { return buffer; }
- private:
-  uint16_t *buffer;
-};
-
-#endif /* WUCY_OS */
 
 #endif // _ADAFRUIT_GFX_H

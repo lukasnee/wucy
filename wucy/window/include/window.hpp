@@ -52,22 +52,27 @@ typedef uint16_t pixelData_t;
 /* format 0xAARRGGBB where 0xAA - alpha byte, 0xRR - Red byte, 0xGG - Green byte, 0xBB - blue byte. */
 typedef enum{
 
-	COLOR_AQUA = 	0xFF00FFFF,
-	COLOR_BLACK = 	0xFF000000,
-	COLOR_BLUE = 	0xFF0000FF,
-	COLOR_FUCHSIA = 0xFFFF00FF,
-	COLOR_GRAY = 	0xFF808080,
-	COLOR_GREEN = 	0xFF008000,
-	COLOR_LIME = 	0xFF00FF00,
-	COLOR_MAROON = 	0xFF800000,
-	COLOR_NAVY = 	0xFF000080,
-	COLOR_OLIVE = 	0xFF808000,
-	COLOR_PURPLE = 	0xFF800080,
-	COLOR_RED = 	0xFFFF0000,
-	COLOR_SILVER = 	0xFFC0C0C0,
-	COLOR_TEAL = 	0xFF008080,
-	COLOR_WHITE = 	0xFFFFFFFF,
-	COLOR_YELLOW = 	0xFFFFFF00,
+	COLOR_AQUA = 			0xFF00FFFF,
+	COLOR_BLACK = 			0xFF000000,
+	COLOR_BLUE = 			0xFF0000FF,
+	COLOR_FUCHSIA = 		0xFFFF00FF,
+	COLOR_GRAY = 			0xFF808080,
+
+	COLOR_GREEN_VERY_DARK = 0xFF002000,
+	COLOR_GREEN_DARK = 		0xFF004000,
+	COLOR_GREEN = 			0xFF008000,
+	COLOR_LIME = 			0xFF00FF00,
+	COLOR_LIME_BRIGHT = 	0xFF80FF80,
+
+	COLOR_MAROON = 			0xFF800000,
+	COLOR_NAVY = 			0xFF000080,
+	COLOR_OLIVE = 			0xFF808000,
+	COLOR_PURPLE = 			0xFF800080,
+	COLOR_RED = 			0xFFFF0000,
+	COLOR_SILVER = 			0xFFC0C0C0,
+	COLOR_TEAL = 			0xFF008080,
+	COLOR_WHITE = 			0xFFFFFFFF,
+	COLOR_YELLOW = 			0xFFFFFF00,
 
 }c_hex_t;
 
@@ -294,7 +299,7 @@ public:
 
 	~Mainframe();
 
-	int8_t addWindow(Window * wnd, uint8_t l = LAYER_VERY_TOP, gfx_pos_t x = 0, gfx_pos_t y = 0);
+	int8_t addWindow(Window * wnd, uint8_t l = LAYER_VERY_TOP, gfx_pos_t x = 0, gfx_pos_t y = 0, bool InitialDraw = 1);
 	int8_t removeWindow(Window * wnd);
 
 	int8_t framingStart(uint8_t fps = 0);

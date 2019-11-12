@@ -62,8 +62,9 @@ void Mainframe::Layering(void * p) {
 				win = *wndCur;
 
 				if (win->getRedrawRequest()) {
-
-					win->clearAll();
+#ifdef WND_CLEAR_WINDOWS
+					win->clearAll(); /* sometimes unnecessary, improves performance */
+#endif WND_CLEAR_WINDOWS
 					win->Redraw(win);
 				}
 
@@ -262,14 +263,14 @@ Mainframe::~Mainframe() {
 
 
 
-int8_t Mainframe::addWindow(Window * wnd, uint8_t l, gfx_pos_t x, gfx_pos_t y) {
+int8_t Mainframe::addWindow(Window * wnd, uint8_t l, gfx_pos_t x, gfx_pos_t y, bool InitialDraw) {
 
 	wnd->setLayer(l);
 
 	wnd->SetX(x);
 	wnd->SetY(y);
 
-	wnd->setRedrawRequest();
+	wnd->setRedrawRequest(InitialDraw);
 
 	if(!Windows.empty()) {
 

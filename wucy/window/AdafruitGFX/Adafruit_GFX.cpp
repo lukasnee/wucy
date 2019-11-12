@@ -114,7 +114,7 @@ void Print::print(const std::string str) {
 void Print::println(const std::string str) {
 
 	print(str);
-	write('\0');
+	write('\n');
 }
 
 
@@ -1234,34 +1234,56 @@ size_t Adafruit_GFX::write(unsigned char c) {
             cursor_x += textsize_x * 6;          // Advance x one char
         }
 
-    } else { // Custom font
+    }
+    else { // Custom font
 
-        if(c == '\n') {
-            cursor_x  = 0;
-            cursor_y += (int16_t)textsize_y *
-                        (uint8_t)pgm_read_byte(&gfxFont->yAdvance);
-        } else if(c != '\r') {
-            uint8_t first = pgm_read_byte(&gfxFont->first);
-            if((c >= first) && (c <= (uint8_t)pgm_read_byte(&gfxFont->last))) {
-                GFXglyph *glyph  = pgm_read_glyph_ptr(gfxFont, c - first);
-                uint8_t   w     = pgm_read_byte(&glyph->width),
-                          h     = pgm_read_byte(&glyph->height);
-                if((w > 0) && (h > 0)) { // Is there an associated bitmap?
-                    int16_t xo = (int8_t)pgm_read_byte(&glyph->xOffset); // sic
-                    if(wrap && ((cursor_x + textsize_x * (xo + w)) > _width)) {
-                        cursor_x  = 0;
-                        cursor_y += (int16_t)textsize_y *
-                          (uint8_t)pgm_read_byte(&gfxFont->yAdvance);
-                    }
-                    drawcolor_tmp = drawcolor;
-                    drawcolor = textcolor;
-                    drawChar(cursor_x, cursor_y, c, textbgcolor, textsize_x, textsize_y);
-                    drawcolor = drawcolor_tmp;
-                }
-                cursor_x += (uint8_t)pgm_read_byte(&glyph->xAdvance) * (int16_t)textsize_x;
-            }
-        }
+		if(c == '\n') {
 
+			cursor_x  = 0;
+			cursor_y += (int16_t)textsize_y *
+						(uint8_t)pgm_read_byte(&gfxFont->yAdvance);
+
+		}
+		else if(c == '\r') {
+
+			cursor_x  = _cursor_offset_x;
+
+		}
+		else {
+
+			uint8_t first = pgm_read_byte(&gfxFont->first);
+
+			if((c >= first) && (c <= (uint8_t)pgm_read_byte(&gfxFont->last))) {
+
+				GFXglyph *glyph  = pgm_read_glyph_ptr(gfxFont, c - first);
+				uint8_t   w     = pgm_read_byte(&glyph->width),
+						  h     = pgm_read_byte(&glyph->height);
+
+				if((w > 0) && (h > 0)) { // Is there an associated bitmap?
+
+					int16_t xo = (int8_t)pgm_read_byte(&glyph->xOffset); // sic
+					if(wrap && ((cursor_x + textsize_x * (xo + w)) > _cursor_bound_w)) {
+
+						cursor_x  = _cursor_offset_x;
+						cursor_y += (int16_t)textsize_y *
+						(uint8_t)pgm_read_byte(&gfxFont->yAdvance);
+
+					}
+					if(cursor_y < _cursor_bound_h) {
+
+						drawcolor_tmp = drawcolor;
+						drawcolor = textcolor;
+						drawChar(cursor_x, cursor_y, c, textbgcolor, textsize_x, textsize_y);
+						drawcolor = drawcolor_tmp;
+
+					}
+
+				}
+
+				cursor_x += (uint8_t)pgm_read_byte(&glyph->xAdvance) * (int16_t)textsize_x;
+
+			}
+		}
     }
     return 1;
 }
@@ -1440,65 +1462,6 @@ void Adafruit_GFX::getTextBounds(const char *str, int16_t x, int16_t y,
     }
 }
 
-#ifndef WUCY_OS
-
-/**************************************************************************/
-/*!
-    @brief    Helper to determine size of a string with current font/size. Pass string and a cursor position, returns UL corner and W,H.
-    @param    str    The ascii string to measure (as an arduino String() class)
-    @param    x      The current cursor X
-    @param    y      The current cursor Y
-    @param    x1     The boundary X coordinate, set by function
-    @param    y1     The boundary Y coordinate, set by function
-    @param    w      The boundary width, set by function
-    @param    h      The boundary height, set by function
-*/
-/**************************************************************************/
-void Adafruit_GFX::getTextBounds(const String &str, int16_t x, int16_t y,
-        int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h) {
-    if (str.length() != 0) {
-        getTextBounds(const_cast<char*>(str.c_str()), x, y, x1, y1, w, h);
-    }
-}
-
-
-/**************************************************************************/
-/*!
-    @brief    Helper to determine size of a PROGMEM string with current font/size. Pass string and a cursor position, returns UL corner and W,H.
-    @param    str     The flash-memory ascii string to measure
-    @param    x       The current cursor X
-    @param    y       The current cursor Y
-    @param    x1      The boundary X coordinate, set by function
-    @param    y1      The boundary Y coordinate, set by function
-    @param    w      The boundary width, set by function
-    @param    h      The boundary height, set by function
-*/
-/**************************************************************************/
-void Adafruit_GFX::getTextBounds(const __FlashStringHelper *str,
-        int16_t x, int16_t y, int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h) {
-    uint8_t *s = (uint8_t *)str, c;
-
-    *x1 = x;
-    *y1 = y;
-    *w  = *h = 0;
-
-    int16_t minx = _width, miny = _height, maxx = -1, maxy = -1;
-
-    while((c = pgm_read_byte(s++)))
-        charBounds(c, &x, &y, &minx, &miny, &maxx, &maxy);
-
-    if(maxx >= minx) {
-        *x1 = minx;
-        *w  = maxx - minx + 1;
-    }
-    if(maxy >= miny) {
-        *y1 = miny;
-        *h  = maxy - miny + 1;
-    }
-}
-
-#endif /* WUCY_OS */
-
 /**************************************************************************/
 /*!
     @brief      Invert the display (ideally using built-in hardware command)
@@ -1510,487 +1473,3 @@ void Adafruit_GFX::invertDisplay(boolean i) {
 }
 
 /***************************************************************************/
-
-#ifndef WUCY_OS
-
-/**************************************************************************/
-/*!
-   @brief    Create a simple drawn button UI element
-*/
-/**************************************************************************/
-Adafruit_GFX_Button::Adafruit_GFX_Button(void) {
-  _gfx = 0;
-}
-
-/**************************************************************************/
-/*!
-   @brief    Initialize button with our desired color/size/settings
-   @param    gfx     Pointer to our display so we can draw to it!
-   @param    x       The X coordinate of the center of the button
-   @param    y       The Y coordinate of the center of the button
-   @param    w       Width of the buttton
-   @param    h       Height of the buttton
-   @param    outline  Color of the outline (16-bit 5-6-5 standard)
-   @param    fill  Color of the button fill (16-bit 5-6-5 standard)
-   @param    textcolor  Color of the button label (16-bit 5-6-5 standard)
-   @param    label  Ascii string of the text inside the button
-   @param    textsize The font magnification of the label text
-*/
-/**************************************************************************/
-// Classic initButton() function: pass center & size
-void Adafruit_GFX_Button::initButton(
- Adafruit_GFX *gfx, int16_t x, int16_t y, uint16_t w, uint16_t h,
- uint16_t outline, uint16_t fill, uint16_t textcolor,
- char *label, uint8_t textsize)
-{
-  // Tweak arguments and pass to the newer initButtonUL() function...
-  initButtonUL(gfx, x - (w / 2), y - (h / 2), w, h, outline, fill,
-    textcolor, label, textsize);
-}
-
-/**************************************************************************/
-/*!
-   @brief    Initialize button with our desired color/size/settings
-   @param    gfx     Pointer to our display so we can draw to it!
-   @param    x       The X coordinate of the center of the button
-   @param    y       The Y coordinate of the center of the button
-   @param    w       Width of the buttton
-   @param    h       Height of the buttton
-   @param    outline  Color of the outline (16-bit 5-6-5 standard)
-   @param    fill  Color of the button fill (16-bit 5-6-5 standard)
-   @param    textcolor  Color of the button label (16-bit 5-6-5 standard)
-   @param    label  Ascii string of the text inside the button
-   @param    textsize_x The font magnification in X-axis of the label text
-   @param    textsize_y The font magnification in Y-axis of the label text
-*/
-/**************************************************************************/
-// Classic initButton() function: pass center & size
-void Adafruit_GFX_Button::initButton(
- Adafruit_GFX *gfx, int16_t x, int16_t y, uint16_t w, uint16_t h,
- uint16_t outline, uint16_t fill, uint16_t textcolor,
- char *label, uint8_t textsize_x, uint8_t textsize_y)
-{
-  // Tweak arguments and pass to the newer initButtonUL() function...
-  initButtonUL(gfx, x - (w / 2), y - (h / 2), w, h, outline, fill,
-    textcolor, label, textsize_x, textsize_y);
-}
-
-/**************************************************************************/
-/*!
-   @brief    Initialize button with our desired color/size/settings, with upper-left coordinates
-   @param    gfx     Pointer to our display so we can draw to it!
-   @param    x1       The X coordinate of the Upper-Left corner of the button
-   @param    y1       The Y coordinate of the Upper-Left corner of the button
-   @param    w       Width of the buttton
-   @param    h       Height of the buttton
-   @param    outline  Color of the outline (16-bit 5-6-5 standard)
-   @param    fill  Color of the button fill (16-bit 5-6-5 standard)
-   @param    textcolor  Color of the button label (16-bit 5-6-5 standard)
-   @param    label  Ascii string of the text inside the button
-   @param    textsize The font magnification of the label text
-*/
-/**************************************************************************/
-void Adafruit_GFX_Button::initButtonUL(
- Adafruit_GFX *gfx, int16_t x1, int16_t y1, uint16_t w, uint16_t h,
- uint16_t outline, uint16_t fill, uint16_t textcolor,
- char *label, uint8_t textsize)
-{
-  initButtonUL(gfx, x1, y1, w, h, outline, fill, textcolor, label, textsize, textsize);
-}
-
-/**************************************************************************/
-/*!
-   @brief    Initialize button with our desired color/size/settings, with upper-left coordinates
-   @param    gfx     Pointer to our display so we can draw to it!
-   @param    x1       The X coordinate of the Upper-Left corner of the button
-   @param    y1       The Y coordinate of the Upper-Left corner of the button
-   @param    w       Width of the buttton
-   @param    h       Height of the buttton
-   @param    outline  Color of the outline (16-bit 5-6-5 standard)
-   @param    fill  Color of the button fill (16-bit 5-6-5 standard)
-   @param    textcolor  Color of the button label (16-bit 5-6-5 standard)
-   @param    label  Ascii string of the text inside the button
-   @param    textsize_x The font magnification in X-axis of the label text
-   @param    textsize_y The font magnification in Y-axis of the label text
-*/
-/**************************************************************************/
-void Adafruit_GFX_Button::initButtonUL(
- Adafruit_GFX *gfx, int16_t x1, int16_t y1, uint16_t w, uint16_t h,
- uint16_t outline, uint16_t fill, uint16_t textcolor,
- char *label, uint8_t textsize_x, uint8_t textsize_y)
-{
-  _x1           = x1;
-  _y1           = y1;
-  _w            = w;
-  _h            = h;
-  _outlinecolor = outline;
-  _fillcolor    = fill;
-  _textcolor    = textcolor;
-  _textsize_x   = textsize_x;
-  _textsize_y   = textsize_y;
-  _gfx          = gfx;
-  strncpy(_label, label, 9);
-}
-
-/**************************************************************************/
-/*!
-   @brief    Draw the button on the screen
-   @param    inverted Whether to draw with fill/text swapped to indicate 'pressed'
-*/
-/**************************************************************************/
-void Adafruit_GFX_Button::drawButton(boolean inverted) {
-  uint16_t fill, outline, text;
-
-  if(!inverted) {
-    fill    = _fillcolor;
-    outline = _outlinecolor;
-    text    = _textcolor;
-  } else {
-    fill    = _textcolor;
-    outline = _outlinecolor;
-    text    = _fillcolor;
-  }
-
-  uint8_t r = min(_w, _h) / 4; // Corner radius
-  _gfx->fillRoundRect(_x1, _y1, _w, _h, r, fill);
-  _gfx->drawRoundRect(_x1, _y1, _w, _h, r, outline);
-
-  _gfx->setCursor(_x1 + (_w/2) - (strlen(_label) * 3 * _textsize_x),
-    _y1 + (_h/2) - (4 * _textsize_y));
-  _gfx->setTextColor(text);
-  _gfx->setTextSize(_textsize_x, _textsize_y);
-  _gfx->print(_label);
-}
-
-/**************************************************************************/
-/*!
-    @brief    Helper to let us know if a coordinate is within the bounds of the button
-    @param    x       The X coordinate to check
-    @param    y       The Y coordinate to check
-    @returns  True if within button graphics outline
-*/
-/**************************************************************************/
-boolean Adafruit_GFX_Button::contains(int16_t x, int16_t y) {
-  return ((x >= _x1) && (x < (int16_t) (_x1 + _w)) &&
-          (y >= _y1) && (y < (int16_t) (_y1 + _h)));
-}
-
-/**************************************************************************/
-/*!
-   @brief    Query whether the button was pressed since we last checked state
-   @returns  True if was not-pressed before, now is.
-*/
-/**************************************************************************/
-boolean Adafruit_GFX_Button::justPressed() { return (currstate && !laststate); }
-
-/**************************************************************************/
-/*!
-   @brief    Query whether the button was released since we last checked state
-   @returns  True if was pressed before, now is not.
-*/
-/**************************************************************************/
-boolean Adafruit_GFX_Button::justReleased() { return (!currstate && laststate); }
-
-// -------------------------------------------------------------------------
-
-// GFXcanvas1, GFXcanvas8 and GFXcanvas16 (currently a WIP, don't get too
-// comfy with the implementation) provide 1-, 8- and 16-bit offscreen
-// canvases, the address of which can be passed to drawBitmap() or
-// pushColors() (the latter appears only in a couple of GFX-subclassed TFT
-// libraries at this time).  This is here mostly to help with the recently-
-// added proportionally-spaced fonts; adds a way to refresh a section of the
-// screen without a massive flickering clear-and-redraw...but maybe you'll
-// find other uses too.  VERY RAM-intensive, since the buffer is in MCU
-// memory and not the display driver...GXFcanvas1 might be minimally useful
-// on an Uno-class board, but this and the others are much more likely to
-// require at least a Mega or various recent ARM-type boards (recommended,
-// as the text+bitmap draw can be pokey).  GFXcanvas1 requires 1 bit per
-// pixel (rounded up to nearest byte per scanline), GFXcanvas8 is 1 byte
-// per pixel (no scanline pad), and GFXcanvas16 uses 2 bytes per pixel (no
-// scanline pad).
-// NOT EXTENSIVELY TESTED YET.  MAY CONTAIN WORST BUGS KNOWN TO HUMANKIND.
-
-/**************************************************************************/
-/*!
-   @brief    Instatiate a GFX 1-bit canvas context for graphics
-   @param    w   Display width, in pixels
-   @param    h   Display height, in pixels
-*/
-/**************************************************************************/
-GFXcanvas1::GFXcanvas1(uint16_t w, uint16_t h) : Adafruit_GFX(w, h) {
-    uint16_t bytes = ((w + 7) / 8) * h;
-    if((buffer = (uint8_t *)malloc(bytes))) {
-        memset(buffer, 0, bytes);
-    }
-}
-
-/**************************************************************************/
-/*!
-   @brief    Delete the canvas, free memory
-*/
-/**************************************************************************/
-GFXcanvas1::~GFXcanvas1(void) {
-    if(buffer) free(buffer);
-}
-
-/**************************************************************************/
-/*!
-    @brief  Draw a pixel to the canvas framebuffer
-    @param  x     x coordinate
-    @param  y     y coordinate
-    @param  color 16-bit 5-6-5 Color to fill with
-*/
-/**************************************************************************/
-void GFXcanvas1::drawPixel(int16_t x, int16_t y) {
-#ifdef __AVR__
-    // Bitmask tables of 0x80>>X and ~(0x80>>X), because X>>Y is slow on AVR
-    static const uint8_t PROGMEM
-        GFXsetBit[] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 },
-        GFXclrBit[] = { 0x7F, 0xBF, 0xDF, 0xEF, 0xF7, 0xFB, 0xFD, 0xFE };
-#endif
-
-    if(buffer) {
-        if((x < 0) || (y < 0) || (x >= _width) || (y >= _height)) return;
-
-        int16_t t;
-        switch(rotation) {
-            case 1:
-                t = x;
-                x = WIDTH  - 1 - y;
-                y = t;
-                break;
-            case 2:
-                x = WIDTH  - 1 - x;
-                y = HEIGHT - 1 - y;
-                break;
-            case 3:
-                t = x;
-                x = y;
-                y = HEIGHT - 1 - t;
-                break;
-        }
-
-        uint8_t   *ptr  = &buffer[(x / 8) + y * ((WIDTH + 7) / 8)];
-#ifdef __AVR__
-        if(color) *ptr |= pgm_read_byte(&GFXsetBit[x & 7]);
-        else      *ptr &= pgm_read_byte(&GFXclrBit[x & 7]);
-#else
-        if(color) *ptr |=   0x80 >> (x & 7);
-        else      *ptr &= ~(0x80 >> (x & 7));
-#endif
-    }
-}
-
-/**************************************************************************/
-/*!
-    @brief  Fill the framebuffer completely with one color
-    @param  color 16-bit 5-6-5 Color to fill with
-*/
-/**************************************************************************/
-void GFXcanvas1::fillScreen(uint16_t color) {
-    if(buffer) {
-        uint16_t bytes = ((WIDTH + 7) / 8) * HEIGHT;
-        memset(buffer, color ? 0xFF : 0x00, bytes);
-    }
-}
-
-/**************************************************************************/
-/*!
-   @brief    Instatiate a GFX 8-bit canvas context for graphics
-   @param    w   Display width, in pixels
-   @param    h   Display height, in pixels
-*/
-/**************************************************************************/
-GFXcanvas8::GFXcanvas8(uint16_t w, uint16_t h) : Adafruit_GFX(w, h) {
-    uint32_t bytes = w * h;
-    if((buffer = (uint8_t *)malloc(bytes))) {
-        memset(buffer, 0, bytes);
-    }
-}
-
-/**************************************************************************/
-/*!
-   @brief    Delete the canvas, free memory
-*/
-/**************************************************************************/
-GFXcanvas8::~GFXcanvas8(void) {
-    if(buffer) free(buffer);
-}
-
-/**************************************************************************/
-/*!
-    @brief  Draw a pixel to the canvas framebuffer
-    @param  x   x coordinate
-    @param  y   y coordinate
-    @param  color 16-bit 5-6-5 Color to fill with
-*/
-/**************************************************************************/
-void GFXcanvas8::drawPixel(int16_t x, int16_t y) {
-    if(buffer) {
-        if((x < 0) || (y < 0) || (x >= _width) || (y >= _height)) return;
-
-        int16_t t;
-        switch(rotation) {
-            case 1:
-                t = x;
-                x = WIDTH  - 1 - y;
-                y = t;
-                break;
-            case 2:
-                x = WIDTH  - 1 - x;
-                y = HEIGHT - 1 - y;
-                break;
-            case 3:
-                t = x;
-                x = y;
-                y = HEIGHT - 1 - t;
-                break;
-        }
-
-        buffer[x + y * WIDTH] = color;
-    }
-}
-
-/**************************************************************************/
-/*!
-    @brief  Fill the framebuffer completely with one color
-    @param  color 16-bit 5-6-5 Color to fill with
-*/
-/**************************************************************************/
-void GFXcanvas8::fillScreen(uint16_t color) {
-    if(buffer) {
-        memset(buffer, color, WIDTH * HEIGHT);
-    }
-}
-
-void GFXcanvas8::writeFastHLine(int16_t x, int16_t y,
-  int16_t w) {
-
-    if((x >= _width) || (y < 0) || (y >= _height)) return;
-    int16_t x2 = x + w - 1;
-    if(x2 < 0) return;
-
-    // Clip left/right
-    if(x < 0) {
-        x = 0;
-        w = x2 + 1;
-    }
-    if(x2 >= _width) w = _width - x;
-
-    int16_t t;
-    switch(rotation) {
-        case 1:
-            t = x;
-            x = WIDTH  - 1 - y;
-            y = t;
-            break;
-        case 2:
-            x = WIDTH  - 1 - x;
-            y = HEIGHT - 1 - y;
-            break;
-        case 3:
-            t = x;
-            x = y;
-            y = HEIGHT - 1 - t;
-            break;
-    }
-
-    memset(buffer + y * WIDTH + x, color, w);
-}
-
-/**************************************************************************/
-/*!
-   @brief    Instatiate a GFX 16-bit canvas context for graphics
-   @param    w   Display width, in pixels
-   @param    h   Display height, in pixels
-*/
-/**************************************************************************/
-GFXcanvas16::GFXcanvas16(uint16_t w, uint16_t h) : Adafruit_GFX(w, h) {
-    uint32_t bytes = w * h * 2;
-    if((buffer = (uint16_t *)malloc(bytes))) {
-        memset(buffer, 0, bytes);
-    }
-}
-
-/**************************************************************************/
-/*!
-   @brief    Delete the canvas, free memory
-*/
-/**************************************************************************/
-GFXcanvas16::~GFXcanvas16(void) {
-    if(buffer) free(buffer);
-}
-
-/**************************************************************************/
-/*!
-    @brief  Draw a pixel to the canvas framebuffer
-    @param  x   x coordinate
-    @param  y   y coordinate
-    @param  color 16-bit 5-6-5 Color to fill with
-*/
-/**************************************************************************/
-void GFXcanvas16::drawPixel(int16_t x, int16_t y) {
-    if(buffer) {
-        if((x < 0) || (y < 0) || (x >= _width) || (y >= _height)) return;
-
-        int16_t t;
-        switch(rotation) {
-            case 1:
-                t = x;
-                x = WIDTH  - 1 - y;
-                y = t;
-                break;
-            case 2:
-                x = WIDTH  - 1 - x;
-                y = HEIGHT - 1 - y;
-                break;
-            case 3:
-                t = x;
-                x = y;
-                y = HEIGHT - 1 - t;
-                break;
-        }
-
-        buffer[x + y * WIDTH] = color;
-    }
-}
-
-/**************************************************************************/
-/*!
-    @brief  Fill the framebuffer completely with one color
-    @param  color 16-bit 5-6-5 Color to fill with
-*/
-/**************************************************************************/
-void GFXcanvas16::fillScreen(uint16_t color) {
-    if(buffer) {
-        uint8_t hi = color >> 8, lo = color & 0xFF;
-        if(hi == lo) {
-            memset(buffer, lo, WIDTH * HEIGHT * 2);
-        } else {
-            uint32_t i, pixels = WIDTH * HEIGHT;
-            for(i=0; i<pixels; i++) buffer[i] = color;
-        }
-    }
-}
-
-/**************************************************************************/
-/*!
-    @brief  Reverses the "endian-ness" of each 16-bit pixel within the
-            canvas; little-endian to big-endian, or big-endian to little.
-            Most microcontrollers (such as SAMD) are little-endian, while
-            most displays tend toward big-endianness. All the drawing
-            functions (including RGB bitmap drawing) take care of this
-            automatically, but some specialized code (usually involving
-            DMA) can benefit from having pixel data already in the
-            display-native order. Note that this does NOT convert to a
-            SPECIFIC endian-ness, it just flips the bytes within each word.
-*/
-/**************************************************************************/
-void GFXcanvas16::byteSwap(void) {
-    if(buffer) {
-        uint32_t i, pixels = WIDTH * HEIGHT;
-        for(i=0; i<pixels; i++) buffer[i] = __builtin_bswap16(buffer[i]);
-    }
-}
-
-#endif /* WUCY_OS */

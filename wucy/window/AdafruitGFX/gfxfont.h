@@ -25,13 +25,15 @@ typedef struct {
         uint8_t   last;        ///< ASCII extents (last char)
 	uint8_t   yAdvance;    ///< Newline distance (y axis)
 
+#ifdef __cplusplus
 	//wucy addition
 	constexpr uint8_t charMaxHeight() {
 
 		uint8_t maxHeight = 0;
 
-		if(glyph == NULL) {
 
+		if (glyph == NULL) {
+			/* todo: this exception doesnt work, crashes with default font  (NULL) */
 			return 8;
 
 		}
@@ -53,8 +55,8 @@ typedef struct {
 
 		uint8_t maxWidth = 0;
 
-		if(glyph == NULL) {
-
+		if (glyph == NULL) {
+			/* todo: this exception doesnt work, crashes with default font  (NULL) */
 			return 6;
 
 		}
@@ -71,6 +73,8 @@ typedef struct {
 			return maxWidth;
 		}
 	};
+
+#endif
 
 } GFXfont;
 

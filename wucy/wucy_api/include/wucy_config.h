@@ -34,6 +34,7 @@
 extern "C" {
 #endif
 
+//#define WND_CLEAR_WINDOWS
 #define DISP_MAX_AVAILABLE_FPS 100 /* range:[0 255] */
 #define DISP_SPI_CLOCK_FREQ 14500000
 

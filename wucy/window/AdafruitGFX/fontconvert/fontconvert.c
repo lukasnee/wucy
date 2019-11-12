@@ -29,7 +29,7 @@ See notes at end for glyph nomenclature & other tidbits.
 
 #define DPI 141 // Approximate res. of Adafruit 2.8" TFT
 
-// Accumulate bits for output, with periodic hexadecimal byte write
+// Accumulate bitssfor output, with periodic hexadecimal byte write
 void enbit(uint8_t value) {
 	static uint8_t row = 0, sum = 0, bit = 0x80, firstCall = 1;
 	if(value) sum |= bit;    // Set bit if needed
