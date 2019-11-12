@@ -66,6 +66,8 @@ Windows framework working - window managing, layering, rendering on screen. Need
 
 * 2019-10-22 Restructured operating system (see fig.1). Rewriting windows program from C to C++, combining with slightly modified AdaruitGFX library.
 
+* 2019-11-12 Many overall software improvements, bug fixes, rewritten old option list from C to C++, very happy and surpirsed with the new simplicity thanks to highly doubted OOP. Cleaned and improved AdafruitGFX lib, added new fonts: converted some .ttf fonts with Adafruit's supplied converted tool. Choosen haxrcorp_4089 8pt as main OS font, for smaller prints trixel_square 4pt and for big glyphs - Maniac 16pt font.  I needed some visual animation for testing, so I written "BouncerBox" class, which draws a window box on screen with randomized floating little squares inside.
+
 ### Extra
 
 Take everything with a grain of salt, I'm an inexperienced engineer, still a student. Honestly, I don't really know what I'm doing. I just have this idea in my mind and I want to make it somewhat real. I thinks it is quite cool.
