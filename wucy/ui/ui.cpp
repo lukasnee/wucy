@@ -164,7 +164,6 @@ void menu_penki_cb(void * p) {
 	case 1: txtfont = &maniac16pt7b; break;
 	case 4: txtfont = &trixel_square4pt7b; break;
 
-
 	}
 
 }
