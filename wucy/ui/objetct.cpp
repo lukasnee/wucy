@@ -143,7 +143,7 @@ void OptionList::checkControl() {
 			setRedrawRequest();
 
 	}
-	else if ((index_cursor >= index_bias + _maxVisibleOpts - 1) &&
+	else if ((index_cursor >= index_bias + _maxVisibleOpts - 3) &&
 			(nextOption(_optScrollBias, _optScrollBias, SKIP_HIDDEN_TRUE) > -1)) {
 
 		setRedrawRequest();
@@ -411,9 +411,9 @@ void OptionList::redraw(void * p) {
 			if (ol->_showSelectMark && (*optCur)->_id == ol->_optSelected) {
 
 				ol->setDrawColor(ol->_colorOptSelectMark);
-				ol->fillRect(w - ol->getCharMaxHeight()/4 + 3 * GUI_OL_MG,
+				ol->fillRect(w - ol->getCharMaxHeight()/3 + 3 * GUI_OL_MG,
 					y + 3 * GUI_OL_MG,
-					ol->getCharMaxHeight()/4 - 2 * GUI_OL_MG,
+					ol->getCharMaxHeight()/3 - 2 * GUI_OL_MG,
 					ol->getCharMaxHeight() - 2 * GUI_OL_MG);
 			}
 

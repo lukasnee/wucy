@@ -237,8 +237,8 @@ Mainframe::Mainframe(gfx_pos_t w, gfx_pos_t h, uint8_t pixelSize) :
 
 	Status.Framing = 0;
 
-	Ping = (pixelData_t*) wucy_hal_Malloc(MALLOC_SPECIALIZED_DMA, frameBuffSize);
-	Pong = (pixelData_t*) wucy_hal_Malloc(MALLOC_SPECIALIZED_DMA, frameBuffSize);
+	Ping = (pixelData_t*) wucy_hal_SpecMalloc(MALLOC_SPECIALIZED_DMA, frameBuffSize);
+	Pong = (pixelData_t*) wucy_hal_SpecMalloc(MALLOC_SPECIALIZED_DMA, frameBuffSize);
 
 	if (Ping == NULL || Pong == NULL) {
 		delete this;
@@ -473,76 +473,33 @@ void Mainframe::changeFpsLimit(uint8_t fps) {
 
 void Mainframe::fpsCalculateAndDraw() {
 
-	if(_fps.window != NULL) {
+
+	uint16_t w = 0, h = 0;
+	int16_t x1 = 0, y1 = 0;
 
 	/* calculate current fps */
 	_fps.Current = (uint32_t)(_fps.Counter) * 1000 / COUNTER_REFRESH_RATE_IN_MS;
 	/* reset current count for new fps sample */
 	_fps.Counter = 0;
 
-	//_fps.str = std::to_string(_fps.Current) + "FPS";
+	_fps.str.assign(std::to_string(_fps.Current) + "FPS");
 	//std::sprintf(_fps.str, "%dFPS", _fps.Current);
 
+	if(_fps.window != NULL) {
+
+	_fps.window->setBounds(0, 0);
+	_fps.window->getTextBounds(_fps.str, 0, 0, &x1, &y1, &w, &h);
+
+	_fps.window->setDimensions(w, h);
 
 	_fps.window->fillAll(COLOR_BLACK);
+
+	_fps.window->setCursor(0, h - 1);
+
 	_fps.window->setTextColor(COLOR_WHITE);
 	_fps.window->print(getFpsPrintOut());
 
-	}
-}
-
-
-
-void Mainframe::fpsLimiterExpired() {
-
-	_fps.LimiterAllows = 1;
-
-	/* resume framing task to check if all conditions pass for new frame */
-	if (eTaskGetState(FramingTaskH) == eSuspended) {
-
-		vTaskResume(FramingTaskH);
-	}
-
-};
-
-void Mainframe::fpsSetVisability(bool state, fps_draw_e pos) {
-
-	uint16_t w = 0, h = 0;
-	int16_t x1 = 0, y1 = 0;
-
-	/* create window */
-	if(_fps.window == NULL && state) {
-
-		_fps.window = new Window(50, 50, DISP_PIXEL_SIZE, NULL);
-		wucy_hal_PinWrite(5, 1);
-		vTaskDelay(10);
-		wucy_hal_PinWrite(5, 0);
-		if(_fps.window != NULL) {
-
-
-			_fps.window->setFont(&trixel_square4pt7b);
-			_fps.window->setCursor(0, 0);
-			_fps.window->setTextSize(1);
-			_fps.window->getTextBounds(_fps.str, 0, 0, &x1, &y1, &w, &h);
-			_fps.window->setDimensions(w, h);
-
-			addWindow(_fps.window, 255, 0, 0, true);
-
-		}
-	}
-	else if (_fps.window != NULL && !state){
-
-		 removeWindow(_fps.window);
-
-		delete _fps.window;
-
-		_fps.window = NULL;
-
-	}
-
-	if(pos != _fps.pos) {
-
-		switch (_fps.pos) {
+	switch (_fps.pos) {
 
 			case FPS_LEFT_TOP_CORNER:
 				_fps.window->SetPosition(0, 0);
@@ -560,13 +517,57 @@ void Mainframe::fpsSetVisability(bool state, fps_draw_e pos) {
 				_fps.window->SetPosition(DISP_WIDTH - w, DISP_HEIGHT - h);
 				break;
 
-			default:
-
-				break;
-		};
+		}
 	}
+}
+
+
+void Mainframe::fpsSetVisability(bool state, fps_draw_e pos) {
+
+
+	/* create window */
+	if(_fps.window == NULL && state) {
+
+		_fps.window = new Window(40, 10, DISP_PIXEL_SIZE, NULL);
+
+		if(_fps.window != NULL) {
+
+			_fps.window->setFont(&wucyFont8pt7b/*trixel_square4pt7b*/);
+			_fps.window->setTextSize(1);
+
+			/* initial draw (later refreshes every sec) */
+			fpsCalculateAndDraw();
+
+			addWindow(_fps.window, 255, 0, 0, true);
+
+		}
+	}
+	else if (_fps.window != NULL && !state){
+
+		 removeWindow(_fps.window);
+
+		delete _fps.window;
+
+		_fps.window = NULL;
+
+	}
+
+	_fps.pos = pos;
 };
 
+
+
+void Mainframe::fpsLimiterExpired() {
+
+	_fps.LimiterAllows = 1;
+
+	/* resume framing task to check if all conditions pass for new frame */
+	if (eTaskGetState(FramingTaskH) == eSuspended) {
+
+		vTaskResume(FramingTaskH);
+	}
+
+};
 
 
 
@@ -574,8 +575,13 @@ Window::Window(gfx_pos_t w, gfx_pos_t h, uint8_t pixelSize, wnd_fcn_t fcn) :
 
 		Geo(0, 0, 0, 0),
 		Adafruit_GFX(w, h),
+
 		pixelSize(pixelSize),
 		frameBuffSize(w * h * pixelSize),
+		FrameBuff(NULL),
+		transperancy(0),
+		layer(0),
+		RedrawRequest(0),
 		RedrawFcn(fcn)
 
 	{
@@ -597,6 +603,8 @@ Window::~Window(){
 
 	free(FrameBuff);
 }
+
+
 
 /* this is called whenever adafruitGFX draws anything. Request redrawing window */
 void Window::startWrite(void) {
@@ -707,15 +715,15 @@ int8_t Window::setDimensions(gfx_pos_t w, gfx_pos_t h) {
 	/* allocate new buffer if length changes */
 	if( w * h != GetW()*GetH()) {
 
-		free(FrameBuff);
+		delete FrameBuff;
 
-		FrameBuff = (pixelData_t *)wucy_hal_Malloc(MALLOC_SIMPLE, w * h * pixelSize);
+		FrameBuff = new pixelData_t[w * h];
 
 		/* if unable to change buffer dimensions and previous dimensions were different */
 		if(FrameBuff == NULL) {
 
 			/* reallocate freed memory buffer */
-			FrameBuff = (pixelData_t *)wucy_hal_Malloc(MALLOC_SIMPLE, GetW() * GetH() * pixelSize);
+			FrameBuff = new pixelData_t[GetW() * GetH()];
 
 			/* if malloc failed */
 			if(FrameBuff == NULL){

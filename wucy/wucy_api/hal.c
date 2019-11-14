@@ -158,20 +158,11 @@ inline void wucy_hal_DelayMs(uint32_t ms) {
  * @return 	pointer to allocated memory block.
  *
  */
-inline void * wucy_hal_Malloc(w_malloc_type_e malloc_type, uint32_t size) {
+inline void * wucy_hal_SpecMalloc(w_malloc_type_e malloc_type, uint32_t size) {
 
  /* Use VRAM_SIZE definition as size for memory allocation  */
 
 	switch(malloc_type){
-
-	case MALLOC_SIMPLE:
-
-		/* USER CODE START */
-
-		return malloc(size);
-
-		/* USER CODE END */
-		break;
 
 	case MALLOC_SPECIALIZED_DMA:
 

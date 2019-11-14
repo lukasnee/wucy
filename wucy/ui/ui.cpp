@@ -192,11 +192,23 @@ void menu_septyni_cb(void *p) {
 
 void menu_astuoni_cb(void * p) {
 
-	static bool toggle = 0;
+	static uint8_t sw = 4;
 
-	toggle = 1;
+	sw++;
+	sw %= 5;
 
-	mf.fpsSetVisability(toggle);
+	switch(sw) {
+
+	case 0:	mf.fpsSetVisability(1, (fps_draw_e)sw); break;
+	case 1:	mf.fpsSetVisability(1, (fps_draw_e)sw); break;
+	case 2:	mf.fpsSetVisability(1, (fps_draw_e)sw); break;
+	case 3:	mf.fpsSetVisability(1, (fps_draw_e)sw); break;
+	case 4:	mf.fpsSetVisability(0, (fps_draw_e)sw); break;
+
+
+
+	}
+
 
 }
 
@@ -384,7 +396,8 @@ void ui_draw_text(void * p) {
 	tw->setTransperancy(1);
 	tw->setTextSize(1);
 	tw->setTextWrap(1);
-	tw->setCursor(5, tw->getCharMaxHeight() + 5 + scrollBias, tw->GetW() - 10, tw->GetH());
+	tw->setCursor(5, tw->getCharMaxHeight() + 5 + scrollBias);
+	tw->setBounds(tw->GetW() - 10, tw->GetH());
 	tw->setTextColor(COLOR_YELLOW);
 
 	//tw->setCursor(0, 6 + 10 + (cos(islow) + 1) / 2 * 50);

@@ -134,13 +134,23 @@ class Adafruit_GFX : public Print {
     @param  y    Y coordinate in pixels
   */
   /**********************************************************************/
-  void setCursor(int16_t x, int16_t y, int16_t bound_w = 0, int16_t bound_h = 0) {
+  void setCursor(int16_t x, int16_t y) {
 	  cursor_x = _cursor_offset_x = x;
 	  cursor_y = _cursor_offset_y = y;
 
-	  _cursor_bound_w = bound_w ? bound_w : _width;
-	  _cursor_bound_h = bound_h ? bound_h : _height;
   }
+
+
+
+  void setBounds(int16_t bound_w = 0, int16_t bound_h = 0) {
+
+	  _cursor_bound_w = bound_w;
+	  _cursor_bound_h = bound_h;
+
+  }
+
+
+
 
   /**********************************************************************/
   /*!
