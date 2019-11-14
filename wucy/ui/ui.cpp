@@ -57,9 +57,6 @@ button_t ROTEN_OK;
 
 Mainframe mf(DISP_WIDTH, DISP_HEIGHT, DISP_PIXEL_SIZE);
 
-static void ui_draw_fpsMark(void * p);
-Window fpsMark(40, 10, DISP_PIXEL_SIZE, ui_draw_fpsMark);
-
 //static void ui_draw_background(void * p);
 //Window background(DISP_WIDTH, DISP_HEIGHT, DISP_PIXEL_SIZE, ui_draw_background);
 
@@ -75,10 +72,6 @@ BouncerBox Bbox(DISP_WIDTH/2, DISP_HEIGHT/2);
 
 #include <object.hpp>
 
-
-#include <wucyFont8pt7b.h>
-#include <maniac16pt7b.h>
-#include <trixel_square4pt7b.h>
 
 OptionList menu(&wucyFont8pt7b, 20, 20, DISP_WIDTH/2, DISP_HEIGHT/2);
 
@@ -107,9 +100,11 @@ void ui_one_ms_timer(void * p);
 
 void menu_vienas_cb(void * p) {
 
-	static uint8_t toggle = 0;
+	static bool toggle = 0;
 
 	toggle ^= 1;
+
+	wucy_hal_PinWrite(5, toggle);
 
 	if(toggle) {
 
@@ -160,9 +155,9 @@ void menu_penki_cb(void * p) {
 
 	switch(switcher) {
 
-	case 0: txtfont = &wucyFont8pt7b; break;
-	case 1: txtfont = &maniac16pt7b; break;
-	case 4: txtfont = &trixel_square4pt7b; break;
+		case 0: txtfont = &wucyFont8pt7b; break;
+		case 1: txtfont = &trixel_square4pt7b; break;
+		case 2: txtfont = &maniac16pt7b; break;
 
 	}
 
@@ -195,12 +190,30 @@ void menu_septyni_cb(void *p) {
 }
 
 
+void menu_astuoni_cb(void * p) {
+
+	static bool toggle = 0;
+
+	toggle = 1;
+
+	mf.fpsSetVisability(toggle);
+
+}
+
 
 void wucy_ui_Init(void) {
 
+	/* inputs */
+
+	wucy_hal_PinInit(27, W_PIN_DIR_INPUT, W_PIN_PULL_UP);
+	Button_Init(&ROTEN_OK, 27, BTN_TYPE_NORMAL);
+	Button_Enable(&ROTEN_OK);
+
+	/* display gui setup */
+
 //	mf.addWindow(&test, 		3, 0, 0);
 //	mf.addWindow(&background, 	1, 0, 0);
-	mf.addWindow(&fpsMark, 		255, 0, 0);
+
 	mf.addWindow(&text, 		2, 0, 64, true);
 
 	mf.addWindow(&Bbox, 4, 64, 0);
@@ -214,9 +227,9 @@ void wucy_ui_Init(void) {
 	menu.addOption(2, OPT_TRYS, "-5", menu_trys_cb);
 	menu.addOption(3, OPT_KETURI, "clean", menu_keturi_cb);
 	menu.addOption(4, OPT_PENKI, "font", menu_penki_cb);
-	menu.addOption(5, OPT_SESI, "UP", menu_sesi_cb);
-	menu.addOption(6, OPT_SEPTYNI, "DOWN", menu_septyni_cb);
-	menu.addOption(7, OPT_ASTUONI, "-", NULL);
+	menu.addOption(5, OPT_SESI, "up", menu_sesi_cb);
+	menu.addOption(6, OPT_SEPTYNI, "down", menu_septyni_cb);
+	menu.addOption(7, OPT_ASTUONI, "show fps", menu_astuoni_cb);
 	menu.addOption(8, OPT_DEVYNI, "--", NULL);
 	menu.addOption(9, OPT_DESIMT, "---", NULL);
 	menu.showSelectMark();
@@ -226,61 +239,11 @@ void wucy_ui_Init(void) {
 
 	mf.framingStart(0);
 
-	wucy_hal_PinInit(27, W_PIN_DIR_INPUT, W_PIN_PULL_UP);
-	Button_Init(&ROTEN_OK, 27, BTN_TYPE_NORMAL);
-	Button_Enable(&ROTEN_OK);
 
 	//sd_test();
 
 
 
-}
-
-
-
-static void ui_draw_fpsMark(void * p) {
-
-	uint16_t w, h;
-	int16_t x1, y1;
-
-	mf.fpsShow(); /* todo make switchable by some input */
-
-	if(mf.fpsVisable()) {
-
-		fpsMark.setFont(&trixel_square4pt7b);
-		fpsMark.setTextColor(COLOR_WHITE, COLOR_BLACK);
-		fpsMark.setTextSize(1);
-
-		fpsMark.getTextBounds(mf.getFpsPrintOut(), 0, 0, &x1, &y1, &w, &h);
-		fpsMark.setCursor(0, 0);
-		fpsMark.setDimensions(w, h);
-
-		fpsMark.print(mf.getFpsPrintOut());
-
-
-		switch (mf.getFpsMarkPos()) {
-
-		case FPS_LEFT_TOP_CORNER:
-			fpsMark.SetPosition(0, 0);
-			break;
-
-		case FPS_RIGHT_TOP_CORNER:
-			fpsMark.SetPosition(DISP_WIDTH - w, 0);
-			break;
-
-		case FPS_LEFT_BOTTOM_CORNER:
-			fpsMark.SetPosition(0, DISP_HEIGHT - h);
-			break;
-
-		case FPS_RIGHT_BOTTOM_CORNER:
-			fpsMark.SetPosition(DISP_WIDTH - w, DISP_HEIGHT - h);
-			break;
-
-		default:
-
-			return;
-		};
-	}
 }
 
 

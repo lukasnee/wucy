@@ -61,10 +61,10 @@ void Mainframe::Layering(void * p) {
 
 				win = *wndCur;
 
-				if (win->getRedrawRequest()) {
+				if (win->getRedrawRequest() && win->getRedrawFcn() != NULL) {
 #ifdef WND_CLEAR_WINDOWS
 					win->clearAll(); /* sometimes unnecessary, improves performance */
-#endif WND_CLEAR_WINDOWS
+#endif
 					win->Redraw(win);
 				}
 
@@ -108,6 +108,7 @@ void Mainframe::Rendering(void * p) {
 	Mainframe * mf;
 
 	while(Status.Framing) {
+
 		for (auto MfCur = Mfs.cbegin(); MfCur != Mfs.cend(); ++MfCur) {
 
 			mf = *MfCur;
@@ -134,35 +135,42 @@ TaskHandle_t Mainframe::FramingTaskH = NULL;
 
 void Mainframe::Framing(void * p) {
 
+	Mainframe * mf;
+
 	while(Status.Framing) {
 
-		if (Status.FirstFrame ||
-				( Status.LayeringDone && Status.TransmissionDone && fpsLimiterPasses())) {
+		for (auto MfCur = Mfs.cbegin(); MfCur != Mfs.cend(); ++MfCur) {
 
-			Status.FirstFrame = 0;
+			mf = *MfCur;
 
-			/* reset framing condition flags */
-			Status.LayeringDone = 0;
-			Status.TransmissionDone = 0;
+			if (Status.FirstFrame ||
+					( mf->Status.LayeringDone && mf->Status.TransmissionDone && mf->fpsLimiterPasses())) {
 
-			/* count framerate for inspection */
-			fpsCountFrame();
+				Status.FirstFrame = 0;
 
-			/* switch frame buffer state */
-			flipFramebuffers();
+				/* reset framing condition flags */
+				Status.LayeringDone = 0;
+				Status.TransmissionDone = 0;
 
-			/* begin timer for limiter */
-			fpsLimiterReset();
+				/* count framerate for inspection */
+				mf->fpsCountFrame();
 
-			/* Before rendering new frame to display,
-			 * enable layering task which has lower
-			 * priority by a single step. Eventualy
-			 * current task will pause on transmission
-			 * and pass on to layering task */
+				/* switch frame buffer state */
+				flipFramebuffers();
 
-			vTaskResume(RenderingTaskH);
-			vTaskResume(LayeringTaskH);
+				/* begin timer for limiter */
+				mf->fpsLimiterReset();
 
+				/* Before rendering new frame to display,
+				 * enable layering task which has lower
+				 * priority by a single step. Eventualy
+				 * current task will pause on transmission
+				 * and pass on to layering task */
+
+				vTaskResume(RenderingTaskH);
+				vTaskResume(LayeringTaskH);
+
+			}
 		}
 
 		vTaskSuspend(NULL);
@@ -213,6 +221,18 @@ Mainframe::Mainframe(gfx_pos_t w, gfx_pos_t h, uint8_t pixelSize) :
 		pixelSize(pixelSize),
 		frameBuffSize(w * h * pixelSize) {
 
+	_fps.pos = FPS_RIGHT_TOP_CORNER;
+	_fps.Limit = 0;
+	_fps.Counter = 0;
+	_fps.Current = 0;
+	_fps.LimiterAllows = 0;
+
+	_fps.counterTimHndlr = NULL;
+	_fps.limiterTimHndlr = NULL;
+	_fps.str.assign("---FPS");
+	_fps.window = NULL;
+
+
 	Mfs.push_back(this);
 
 	Status.Framing = 0;
@@ -224,21 +244,6 @@ Mainframe::Mainframe(gfx_pos_t w, gfx_pos_t h, uint8_t pixelSize) :
 		delete this;
 	}
 }
-
-
-
-void Mainframe::setAll() {
-
-	memset((uint8_t*)FBUFF_DRAW(this), 0xFF, frameBuffSize);
-}
-
-
-
-void Mainframe::clearAll() {
-	memset((uint8_t*)FBUFF_DRAW(this), 0x00, frameBuffSize);
-
-}
-
 
 
 Mainframe::~Mainframe() {
@@ -259,6 +264,21 @@ Mainframe::~Mainframe() {
 			break;
 		}
 	}
+}
+
+
+
+
+void Mainframe::setAll() {
+
+	memset((uint8_t*)FBUFF_DRAW(this), 0xFF, frameBuffSize);
+}
+
+
+
+void Mainframe::clearAll() {
+	memset((uint8_t*)FBUFF_DRAW(this), 0x00, frameBuffSize);
+
 }
 
 
@@ -352,58 +372,36 @@ int8_t Mainframe::framingStop() {
 
 
 
-fps_t Mainframe::fps = {
 
-	.Counter = 0,
-	.Current = 0,
-	.Limit = 0,
-	.LimiterAllows = 1,
-	.limiterTimHndlr = NULL,
-	.counterTimHndlr = NULL,
-	.str = {'-', '-', '-', 'F', 'P', 'S', '\0'},
-	.pos = FPS_RIGHT_TOP_CORNER,
-	.show = 0,
-
-};
+//fps_t Mainframe::_fps = {
+//
+//	.Counter = 0,
+//	.Current = 0,
+//	.Limit = 0,
+//	.LimiterAllows = 1,
+//	.limiterTimHndlr = NULL,
+//	.counterTimHndlr = NULL,
+//	.str = "---FPS",
+//	.pos = FPS_RIGHT_TOP_CORNER,
+//	.window = NULL,
+//};
 
 void Mainframe::fpsLimiterCallback(TimerHandle_t xTimer) {
 
+	Mainframe * mf = (Mainframe * )pvTimerGetTimerID(xTimer);
+
 	/* indicate the timer has expired (ready for new frame) */
-	fpsLimiterExpired();
+	mf->fpsLimiterExpired();
 
 }
 
 void Mainframe::fpsCounterCallback(TimerHandle_t xTimer) {
 
+	Mainframe * mf = (Mainframe * )pvTimerGetTimerID(xTimer);
+
 	/* proccess count sequence */
-	fpsCalculate();
+	mf->fpsCalculateAndDraw();
 }
-
-
-void Mainframe::changeFpsLimit(uint8_t fps) {
-
-	Mainframe::fps.Limit = fps;
-
-	if(getfpsLimit() > 0) {
-
-		if(Mainframe::fps.limiterTimHndlr != NULL) {
-
-			xTimerDelete(Mainframe::fps.limiterTimHndlr, 0);
-		}
-
-		Mainframe::fps.limiterTimHndlr = xTimerCreate("fps_lim\0",
-				1000 / getfpsLimit() / portTICK_PERIOD_MS, pdFALSE,
-				0, Mainframe::fpsLimiterCallback);
-
-		xTimerStart(Mainframe::fps.counterTimHndlr, 0);
-
-	}
-	else {
-		Mainframe::fps.LimiterAllows = 1;
-	}
-}
-
-
 
 /* begin limiter timer process */
 void Mainframe::startFpsLimiter(uint8_t fps) {
@@ -411,42 +409,93 @@ void Mainframe::startFpsLimiter(uint8_t fps) {
 	changeFpsLimit(fps);
 
 	/* run autoreload 1.000 sec timer for framerate counting */
-	Mainframe::fps.counterTimHndlr = xTimerCreate("fps_cnt\0",
+	Mainframe::_fps.counterTimHndlr = xTimerCreate("fps_cnt\0",
 			COUNTER_REFRESH_RATE_IN_MS / portTICK_PERIOD_MS, pdTRUE,
-			0, Mainframe::fpsCounterCallback);
+			this, Mainframe::fpsCounterCallback);
 
-	xTimerStart(Mainframe::fps.counterTimHndlr, 0);
-
-}
-
-
-void Mainframe::fpsCalculate() {
-
-	/* calculate current fps */
-	fps.Current = (uint32_t)(fps.Counter) * 1000 / COUNTER_REFRESH_RATE_IN_MS;
-	/* reset current count for new fps sample */
-	fps.Counter = 0;
-
-	sprintf(fps.str, "%dFPS", fps.Current);
-
-
+	xTimerStart(Mainframe::_fps.counterTimHndlr, 0);
 
 }
 
 /* stpo timer proccess */
 void Mainframe::stopFpsLimiter() {
 
-	fps.LimiterAllows = 0;
+	_fps.LimiterAllows = 0;
 
-	xTimerDelete(Mainframe::fps.limiterTimHndlr, 0);
-	xTimerDelete(Mainframe::fps.counterTimHndlr, 0);
+	xTimerDelete(Mainframe::_fps.limiterTimHndlr, 0);
+	xTimerDelete(Mainframe::_fps.counterTimHndlr, 0);
 
 }
+
+/* restart timer */
+void Mainframe::fpsLimiterReset() {
+
+	if(getfpsLimit()) {
+
+		_fps.LimiterAllows = 0;
+
+		/* reset and run timer again */
+		if(xTimerIsTimerActive(Mainframe::_fps.limiterTimHndlr) == pdFALSE)
+			xTimerStart(Mainframe::_fps.limiterTimHndlr, 0);
+	}
+	else {
+
+		vTaskDelay(1);
+	}
+}
+void Mainframe::changeFpsLimit(uint8_t fps) {
+
+	Mainframe::_fps.Limit = fps;
+
+	if(getfpsLimit() > 0) {
+
+		if(Mainframe::_fps.limiterTimHndlr != NULL) {
+
+			xTimerDelete(Mainframe::_fps.limiterTimHndlr, 0);
+		}
+
+		Mainframe::_fps.limiterTimHndlr = xTimerCreate("fps_lim\0",
+				1000 / getfpsLimit() / portTICK_PERIOD_MS, pdFALSE,
+				this, Mainframe::fpsLimiterCallback);
+
+		xTimerStart(Mainframe::_fps.counterTimHndlr, 0);
+
+	}
+	else {
+
+		_fps.LimiterAllows = 1;
+
+	}
+}
+
+
+
+
+void Mainframe::fpsCalculateAndDraw() {
+
+	if(_fps.window != NULL) {
+
+	/* calculate current fps */
+	_fps.Current = (uint32_t)(_fps.Counter) * 1000 / COUNTER_REFRESH_RATE_IN_MS;
+	/* reset current count for new fps sample */
+	_fps.Counter = 0;
+
+	//_fps.str = std::to_string(_fps.Current) + "FPS";
+	//std::sprintf(_fps.str, "%dFPS", _fps.Current);
+
+
+	_fps.window->fillAll(COLOR_BLACK);
+	_fps.window->setTextColor(COLOR_WHITE);
+	_fps.window->print(getFpsPrintOut());
+
+	}
+}
+
 
 
 void Mainframe::fpsLimiterExpired() {
 
-	fps.LimiterAllows = 1;
+	_fps.LimiterAllows = 1;
 
 	/* resume framing task to check if all conditions pass for new frame */
 	if (eTaskGetState(FramingTaskH) == eSuspended) {
@@ -456,24 +505,67 @@ void Mainframe::fpsLimiterExpired() {
 
 };
 
-/* restart timer */
-void Mainframe::fpsLimiterReset() {
+void Mainframe::fpsSetVisability(bool state, fps_draw_e pos) {
 
-	if(getfpsLimit()) {
+	uint16_t w = 0, h = 0;
+	int16_t x1 = 0, y1 = 0;
 
-		fps.LimiterAllows = 0;
+	/* create window */
+	if(_fps.window == NULL && state) {
 
-		/* reset and run timer again */
-		if(xTimerIsTimerActive(Mainframe::fps.limiterTimHndlr) == pdFALSE)
-			xTimerStart(Mainframe::fps.limiterTimHndlr, 0);
+		_fps.window = new Window(50, 50, DISP_PIXEL_SIZE, NULL);
+		wucy_hal_PinWrite(5, 1);
+		vTaskDelay(10);
+		wucy_hal_PinWrite(5, 0);
+		if(_fps.window != NULL) {
+
+
+			_fps.window->setFont(&trixel_square4pt7b);
+			_fps.window->setCursor(0, 0);
+			_fps.window->setTextSize(1);
+			_fps.window->getTextBounds(_fps.str, 0, 0, &x1, &y1, &w, &h);
+			_fps.window->setDimensions(w, h);
+
+			addWindow(_fps.window, 255, 0, 0, true);
+
+		}
 	}
-	else {
+	else if (_fps.window != NULL && !state){
 
-		vTaskDelay(1);
+		 removeWindow(_fps.window);
+
+		delete _fps.window;
+
+		_fps.window = NULL;
+
 	}
-}
 
+	if(pos != _fps.pos) {
 
+		switch (_fps.pos) {
+
+			case FPS_LEFT_TOP_CORNER:
+				_fps.window->SetPosition(0, 0);
+				break;
+
+			case FPS_RIGHT_TOP_CORNER:
+				_fps.window->SetPosition(DISP_WIDTH - w, 0);
+				break;
+
+			case FPS_LEFT_BOTTOM_CORNER:
+				_fps.window->SetPosition(0, DISP_HEIGHT - h);
+				break;
+
+			case FPS_RIGHT_BOTTOM_CORNER:
+				_fps.window->SetPosition(DISP_WIDTH - w, DISP_HEIGHT - h);
+				break;
+
+			default:
+
+				break;
+		};
+	}
+};
 
 
 

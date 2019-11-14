@@ -58,6 +58,7 @@ extern "C" {
 
 #include "wucy_hal.h"
 
+
 /* wucy integrated modules */
 
 typedef enum{
@@ -77,8 +78,6 @@ typedef enum{
 
 }wucy_rtos_taskPrior_e;
 
-
-
 // ============================================================================
 //								display driver module
 //  ===========================================================================
@@ -97,45 +96,6 @@ void wucy_disp_WakeUp(void);
 void wucy_disp_VRAM_SetAll(void);
 void wucy_disp_VRAM_ClearAll(void);
 uint16_t wucy_disp_HEXcolor2DispPixelData(uint32_t hexColor);
-
-// ============================================================================
-//								window/GFX module
-//  ===========================================================================
-/*
-int8_t wucy_wnd_FramingStart(uint8_t fps);
-int8_t wucy_wnd_FramingStop(void);
-
-void wucy_wnd_MainframeSetAll(void);
-void wucy_wnd_MainframeClearAll(void);
-int8_t wucy_wnd_Init(void);
-int8_t wucy_wnd_DeInit(void);
-
-uint8_t wucy_wnd_NewFrame(void);
-void wucy_wnd_RenderFrame(void);
-*/
-/*
-int8_t wucy_wnd_Create(window_t * wnd, wnd_fcn_t WndDrawFcn, layer_e layer, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h);
-int8_t wucy_wnd_Delete(window_t * wnd);
-void wucy_wnd_RedrawRequest(window_t * wnd);
-void wucy_wnd_PixelSet(window_t * wnd, gfx_pos_t x, gfx_pos_t y, pixel_vram_t data);
-pixel_vram_t wucy_wnd_PixelGet(window_t * wnd, gfx_pos_t x, gfx_pos_t y);
-void wucy_wnd_SetPosition(window_t * wnd, gfx_pos_t x, gfx_pos_t y);
-int8_t wucy_wnd_SetDimensions(window_t * wnd, gfx_pos_t w, gfx_pos_t h);
-gfx_geo_t wucy_wnd_GeoGet(window_t * wnd);
-*/
-
-
-/*
-void wucy_gfx_SetAll(window_t * wnd);
-void wucy_gfx_ClearAll(window_t * wnd);
-void wucy_gfx_DrawSinglePixel(window_t * wnd, c_hex_t color, gfx_pos_t x, gfx_pos_t y);
-void wucy_gfx_DrawHLine(window_t * wnd, pixel_vram_t pxl_data, gfx_pos_t x, gfx_pos_t y, gfx_pos_t length);
-void wucy_gfx_DrawWindowFrame(window_t * wnd, c_hex_t color, gfx_pos_t thickness);
-void wucy_gfx_DrawRect(window_t * wnd, c_hex_t color, gfx_ref_e ref, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h);
-void wucy_gfx_DrawBox(window_t * wnd, c_hex_t color, gfx_ref_e ref, gfx_pos_t x, gfx_pos_t y, gfx_pos_t w, gfx_pos_t h);
-*/
-
-
 
 #ifdef __cplusplus
 }

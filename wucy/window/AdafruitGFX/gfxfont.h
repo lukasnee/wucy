@@ -7,6 +7,8 @@
 #ifndef _GFXFONT_H_
 #define _GFXFONT_H_
 
+#define PROGMEM /* override */
+
 /// Font data stored PER GLYPH
 typedef struct {
 	uint16_t bitmapOffset;     ///< Pointer into GFXfont->bitmap
@@ -25,57 +27,8 @@ typedef struct {
         uint8_t   last;        ///< ASCII extents (last char)
 	uint8_t   yAdvance;    ///< Newline distance (y axis)
 
-#ifdef __cplusplus
-	//wucy addition
-	constexpr uint8_t charMaxHeight() {
-
-		uint8_t maxHeight = 0;
-
-
-		if (glyph == NULL) {
-			/* todo: this exception doesnt work, crashes with default font  (NULL) */
-			return 8;
-
-		}
-		else {
-
-			for(uint16_t p = 0; p <= last - first; p++) {
-
-				if ((glyph + p)->height > maxHeight) {
-
-					maxHeight = (glyph + p)->height;
-
-				}
-			}
-		}
-		return maxHeight;
-	};
-
-	constexpr uint8_t charMaxWidth() {
-
-		uint8_t maxWidth = 0;
-
-		if (glyph == NULL) {
-			/* todo: this exception doesnt work, crashes with default font  (NULL) */
-			return 6;
-
-		}
-		else {
-
-			for(uint16_t p = 0; p <= last - first; p++) {
-
-				if ((glyph + p)->width > maxWidth) {
-
-					maxWidth = (glyph + p)->width;
-
-				}
-			}
-			return maxWidth;
-		}
-	};
-
-#endif
-
 } GFXfont;
+
+extern const GFXfont wucyFont8pt7b, maniac16pt7b, trixel_square4pt7b;
 
 #endif // _GFXFONT_H_

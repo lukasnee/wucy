@@ -30,9 +30,6 @@
 
 #include <wucy_api.h>
 
-
-
-
 /* USER PRIVATE INCLUDES START */
 
 	/* USER PRIVATE INCLUDES END */

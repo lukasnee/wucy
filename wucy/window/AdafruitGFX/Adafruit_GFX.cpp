@@ -34,11 +34,10 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "../../window/AdafruitGFX/Adafruit_GFX.h"
 
 #include "../../window/AdafruitGFX/glcdfont.c"
-#ifdef __AVR__
-  #include <avr/pgmspace.h>
-#elif defined(ESP8266) || defined(ESP32)
-  #include <pgmspace.h>
-#endif
+
+#include <wucyFont8pt7b.h>
+#include <maniac16pt7b.h>
+#include <trixel_square4pt7b.h>
 
 // Many (but maybe not all) non-AVR board installs define macros
 // for compatibility with existing PROGMEM-reading AVR code.
@@ -54,37 +53,21 @@ POSSIBILITY OF SUCH DAMAGE.
  #define pgm_read_dword(addr) (*(const unsigned long *)(addr))
 #endif
 
-// Pointers are a peculiar case...typically 16-bit on AVR boards,
-// 32 bits elsewhere.  Try to accommodate both...
+#define pgm_read_pointer(addr) ((void *)pgm_read_dword(addr))
 
-#if !defined(__INT_MAX__) || (__INT_MAX__ > 0xFFFF)
- #define pgm_read_pointer(addr) ((void *)pgm_read_dword(addr))
-#else
- #define pgm_read_pointer(addr) ((void *)pgm_read_word(addr))
-#endif
 
 inline GFXglyph * pgm_read_glyph_ptr(const GFXfont *gfxFont, uint8_t c)
 {
-#ifdef __AVR__
-    return &(((GFXglyph *)pgm_read_pointer(&gfxFont->glyph))[c]);
-#else
-    // expression in __AVR__ section may generate "dereferencing type-punned pointer will break strict-aliasing rules" warning
-    // In fact, on other platforms (such as STM32) there is no need to do this pointer magic as program memory may be read in a usual way
-    // So expression may be simplified
+
     return gfxFont->glyph + c;
-#endif //__AVR__
+
 }
 
 inline uint8_t * pgm_read_bitmap_ptr(const GFXfont *gfxFont)
 {
-#ifdef __AVR__
-    return (uint8_t *)pgm_read_pointer(&gfxFont->bitmap);
-#else
-    // expression in __AVR__ section generates "dereferencing type-punned pointer will break strict-aliasing rules" warning
-    // In fact, on other platforms (such as STM32) there is no need to do this pointer magic as program memory may be read in a usual way
-    // So expression may be simplified
+
     return gfxFont->bitmap;
-#endif //__AVR__
+
 }
 
 #ifndef min
@@ -145,6 +128,8 @@ WIDTH(w), HEIGHT(h)
     wrap      = true;
     _cp437    = false;
     gfxFont   = NULL;
+
+    _cursor_bound_h = _cursor_bound_w = _cursor_offset_x = _cursor_offset_y = 0;
 }
 
 /**************************************************************************/
@@ -1461,7 +1446,24 @@ void Adafruit_GFX::getTextBounds(const char *str, int16_t x, int16_t y,
         *h  = maxy - miny + 1;
     }
 }
-
+/**************************************************************************/
+/*!
+    @brief    Helper to determine size of a string with current font/size. Pass string and a cursor position, returns UL corner and W,H.
+    @param    str    The ascii string to measure (as an arduino String() class)
+    @param    x      The current cursor X
+    @param    y      The current cursor Y
+    @param    x1     The boundary X coordinate, set by function
+    @param    y1     The boundary Y coordinate, set by function
+    @param    w      The boundary width, set by function
+    @param    h      The boundary height, set by function
+*/
+/**************************************************************************/
+void Adafruit_GFX::getTextBounds(const std::string &str, int16_t x, int16_t y,
+        int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h) {
+    if (str.length() != 0) {
+        getTextBounds(const_cast<char*>(str.c_str()), x, y, x1, y1, w, h);
+    }
+}
 /**************************************************************************/
 /*!
     @brief      Invert the display (ideally using built-in hardware command)

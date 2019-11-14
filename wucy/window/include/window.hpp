@@ -45,6 +45,7 @@ extern "C" {
 
 #include "Adafruit_GFX.h"
 
+#include "wucy_api.h"
 
 typedef uint16_t pixelData_t;
 
@@ -142,6 +143,7 @@ public:
 class Window : public Geo, public Adafruit_GFX {
 
 private:
+
 	uint8_t 		pixelSize;
 	uint32_t 		frameBuffSize;
 	pixelData_t * 	FrameBuff;
@@ -238,18 +240,6 @@ typedef enum{
 
 } fps_draw_e;
 
-typedef struct {
-
-	uint8_t 		Counter, Current, Limit;
-	uint8_t 		LimiterAllows:1;
-	TimerHandle_t 	limiterTimHndlr, counterTimHndlr;
-
-	char 			str[7];
-	fps_draw_e 		pos;
-	uint8_t 		show:1;
-
-} fps_t;
-
 
 class Mainframe : public Geo {
 
@@ -281,7 +271,6 @@ private:
 	static TaskHandle_t FramingTaskH;
 	static void 		Framing(void * p);
 
-
 	static void flipFramebuffers() {
 		Status.BufferState = (
 				(Status.BufferState == PING_DRAW_PONG_SEND) ?
@@ -290,8 +279,6 @@ private:
 
 	#define FBUFF_DRAW(mf_p) (!mf_p->Status.BufferState ? mf_p->Pong : mf_p->Ping)
 	#define FBUFF_SEND(mf_p) (mf_p->Status.BufferState ? mf_p->Pong : mf_p->Ping)
-
-
 
 public:
 
@@ -314,32 +301,45 @@ public:
 
 private:
 
-	static fps_t fps;
+	struct {
 
-	static void fpsLimiterReset();
-	static uint8_t fpsLimiterPasses() { return fps.LimiterAllows; };
-	static void fpsCountFrame() { fps.Counter++; };
-	static void startFpsLimiter(uint8_t fps = 0); /* unlimited default */
-	static void stopFpsLimiter();
+		uint8_t 		Counter, Current, Limit;
+		uint8_t 		LimiterAllows:1;
+
+		fps_draw_e 		pos;
+
+		std::string 	str;
+		TimerHandle_t 	limiterTimHndlr, counterTimHndlr;
+		Window * 		window;
+
+	} _fps;
+
+	void fpsLimiterReset();
+	uint8_t fpsLimiterPasses() { return _fps.LimiterAllows; };
+	void fpsCountFrame() { _fps.Counter++; };
+	void startFpsLimiter(uint8_t fps = 0); /* unlimited default */
+	void stopFpsLimiter();
 
 	static void fpsLimiterCallback(TimerHandle_t xTimer);
 	static void fpsCounterCallback(TimerHandle_t xTimer);
 
 public:
 
-	static void fpsLimiterExpired();
-	static void fpsCalculate();
-	static void setFpsMarkPos(fps_draw_e pos) { fps.pos = pos; };
-	static fps_draw_e getFpsMarkPos() { return fps.pos; };
-	static void fpsShow() { fps.show = 1; };
-	static void fpsHide() { fps.show = 0; };
-	static uint8_t fpsVisable() { return fps.show; };
-	static uint16_t getFps(){ return fps.Current; }
+	void fpsLimiterExpired();
+	void fpsCalculateAndDraw();
+
+	fps_draw_e getFpsMarkPos() { return _fps.pos; };
+
+	void fpsSetVisability(bool state, fps_draw_e pos = FPS_RIGHT_TOP_CORNER);
+	void fpsRedrawOverlay();
+
+	bool fpsVisable() { return _fps.window?1:0; };
+	uint16_t getFps(){ return _fps.Current; }
 
 	/* 7 chars = "000FPS\0" */
-	static const char * getFpsPrintOut(){ return fps.str; }
-	static void changeFpsLimit(uint8_t fps);
-	static uint8_t getfpsLimit() { return fps.Limit; };
+	const std::string getFpsPrintOut(){ return _fps.str; }
+	void changeFpsLimit(uint8_t fps);
+	uint8_t getfpsLimit() { return _fps.Limit; };
 
 };
 

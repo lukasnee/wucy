@@ -48,10 +48,11 @@ void wucy_system(void * p) {
 //	wucy_hal_PinInit(26, W_PIN_DIR_OUTPUT, W_PIN_PULL_DOWN);
 //	wucy_hal_PinWrite(26, 0);
 
-	wucy_hal_PinInit(27, W_PIN_DIR_OUTPUT, W_PIN_PULL_DOWN);
-	wucy_hal_PinWrite(27, 0);
+//	wucy_hal_PinInit(27, W_PIN_DIR_OUTPUT, W_PIN_PULL_DOWN);
+//	wucy_hal_PinWrite(27, 0);
 
-
+	wucy_hal_PinInit(5, W_PIN_DIR_OUTPUT, W_PIN_PULL_DOWN);
+	wucy_hal_PinWrite(5, 0);
 
 	/* system init */
 

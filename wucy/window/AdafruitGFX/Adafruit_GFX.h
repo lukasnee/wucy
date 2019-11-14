@@ -3,8 +3,6 @@
 
 #define WUCY_OS
 
-#define PROGMEM /* override */
-
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
@@ -36,8 +34,7 @@ class Adafruit_GFX : public Print {
 
 #ifdef WUCY_OS
 
-  uint8_t getCharMaxHeight() { return gfxFont->charMaxHeight(); };
-  uint8_t getCharMaxWidth() { return gfxFont->charMaxWidth(); };
+  uint8_t getCharMaxHeight() { return gfxFont->yAdvance; };
 
   virtual ~Adafruit_GFX() {}; // Deconstructor
 #endif/* WUCY_OS */
@@ -124,6 +121,8 @@ class Adafruit_GFX : public Print {
 	      uint16_t bg, uint8_t size_x, uint8_t size_y),
     getTextBounds(const char *string, int16_t x, int16_t y,
       int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h),
+	getTextBounds(const std::string &str, int16_t x, int16_t y,
+	          int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h),
     setTextSize(uint8_t s),
     setTextSize(uint8_t sx, uint8_t sy),
     setFont(const GFXfont *f = NULL);
