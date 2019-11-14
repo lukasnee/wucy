@@ -221,7 +221,7 @@ Mainframe::Mainframe(gfx_pos_t w, gfx_pos_t h, uint8_t pixelSize) :
 		pixelSize(pixelSize),
 		frameBuffSize(w * h * pixelSize) {
 
-	_fps.pos = FPS_RIGHT_TOP_CORNER;
+	_fps.pos = FPS_HIDE;
 	_fps.Limit = 0;
 	_fps.Counter = 0;
 	_fps.Current = 0;
@@ -482,12 +482,14 @@ void Mainframe::fpsCalculateAndDraw() {
 	/* reset current count for new fps sample */
 	_fps.Counter = 0;
 
-	_fps.str.assign(std::to_string(_fps.Current) + "FPS");
+	_fps.str = std::to_string(_fps.Current) + "FPS";
+
 	//std::sprintf(_fps.str, "%dFPS", _fps.Current);
 
 	if(_fps.window != NULL) {
 
-	_fps.window->setBounds(0, 0);
+	_fps.window->setBounds();
+
 	_fps.window->getTextBounds(_fps.str, 0, 0, &x1, &y1, &w, &h);
 
 	_fps.window->setDimensions(w, h);
@@ -497,10 +499,12 @@ void Mainframe::fpsCalculateAndDraw() {
 	_fps.window->setCursor(0, h - 1);
 
 	_fps.window->setTextColor(COLOR_WHITE);
-	_fps.window->print(getFpsPrintOut());
+	_fps.window->print(_fps.str);
 
 	switch (_fps.pos) {
 
+			case FPS_HIDE:
+				break;
 			case FPS_LEFT_TOP_CORNER:
 				_fps.window->SetPosition(0, 0);
 				break;
@@ -522,17 +526,19 @@ void Mainframe::fpsCalculateAndDraw() {
 }
 
 
-void Mainframe::fpsSetVisability(bool state, fps_draw_e pos) {
+void Mainframe::fpsSetVisability(fps_draw_e pos) {
 
+	_fps.pos = pos;
 
 	/* create window */
-	if(_fps.window == NULL && state) {
+	if(_fps.window == NULL && _fps.pos != FPS_HIDE) {
 
-		_fps.window = new Window(40, 10, DISP_PIXEL_SIZE, NULL);
+		_fps.window = new Window(1, 1, DISP_PIXEL_SIZE, NULL);
 
 		if(_fps.window != NULL) {
 
-			_fps.window->setFont(&wucyFont8pt7b/*trixel_square4pt7b*/);
+			_fps.window->setTextWrap(0);
+			_fps.window->setFont(&trixel_square4pt7b/*trixel_square4pt7b*/);
 			_fps.window->setTextSize(1);
 
 			/* initial draw (later refreshes every sec) */
@@ -542,17 +548,15 @@ void Mainframe::fpsSetVisability(bool state, fps_draw_e pos) {
 
 		}
 	}
-	else if (_fps.window != NULL && !state){
+	else if (_fps.window != NULL && _fps.pos == FPS_HIDE) {
 
-		 removeWindow(_fps.window);
+		removeWindow(_fps.window);
 
 		delete _fps.window;
 
 		_fps.window = NULL;
 
 	}
-
-	_fps.pos = pos;
 };
 
 
@@ -601,7 +605,8 @@ Window::Window(gfx_pos_t w, gfx_pos_t h, uint8_t pixelSize, wnd_fcn_t fcn) :
 
 Window::~Window(){
 
-	free(FrameBuff);
+	delete FrameBuff;
+
 }
 
 

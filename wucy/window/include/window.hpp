@@ -233,6 +233,7 @@ typedef enum{ FPS_LIMITER_RESET = 0,
 
 typedef enum{
 
+	FPS_HIDE = 0,
 	FPS_LEFT_TOP_CORNER,
 	FPS_RIGHT_TOP_CORNER,
 	FPS_LEFT_BOTTOM_CORNER,
@@ -323,21 +324,20 @@ private:
 	static void fpsLimiterCallback(TimerHandle_t xTimer);
 	static void fpsCounterCallback(TimerHandle_t xTimer);
 
+	void fpsLimiterExpired();
+
 public:
 
-	void fpsLimiterExpired();
 	void fpsCalculateAndDraw();
 
 	fps_draw_e getFpsMarkPos() { return _fps.pos; };
 
-	void fpsSetVisability(bool state, fps_draw_e pos = FPS_RIGHT_TOP_CORNER);
+	void fpsSetVisability(fps_draw_e pos = FPS_RIGHT_TOP_CORNER);
 	void fpsRedrawOverlay();
 
-	bool fpsVisable() { return _fps.window?1:0; };
+	bool fpsVisable() { return _fps.window ? 1 : 0; };
 	uint16_t getFps(){ return _fps.Current; }
 
-	/* 7 chars = "000FPS\0" */
-	const std::string getFpsPrintOut(){ return _fps.str; }
 	void changeFpsLimit(uint8_t fps);
 	uint8_t getfpsLimit() { return _fps.Limit; };
 

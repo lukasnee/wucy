@@ -1167,6 +1167,8 @@ void Adafruit_GFX::drawChar(int16_t x, int16_t y, unsigned char c, uint16_t bg, 
 /**************************************************************************/
 size_t Adafruit_GFX::write(unsigned char c) {
 
+	/* todo fix bounds so they act as infine if set to 0 */
+
 	uint16_t drawcolor_tmp = drawcolor;
 
 	if(gfxFont) {
@@ -1196,14 +1198,14 @@ size_t Adafruit_GFX::write(unsigned char c) {
 				if((w > 0) && (h > 0)) { // Is there an associated bitmap?
 
 					int16_t xo = (int8_t)pgm_read_byte(&glyph->xOffset); // sic
-					if(wrap && _cursor_bound_w && ((cursor_x + textsize_x * (xo + w)) > _cursor_bound_w)) {
+					if(wrap && _cursor_bound_w && ((cursor_x + textsize_x * (xo + w)) > _cursor_bound_w + _cursor_offset_x)) {
 
 						cursor_x  = _cursor_offset_x;
 						cursor_y += (int16_t)textsize_y *
 						(uint8_t)pgm_read_byte(&gfxFont->yAdvance);
 
 					}
-					if(_cursor_bound_h == 0 || cursor_y < _cursor_bound_h) {
+					if(_cursor_bound_h == 0 || cursor_y < _cursor_bound_h  + _cursor_offset_y) {
 
 						drawcolor_tmp = drawcolor;
 						drawcolor = textcolor;
@@ -1319,26 +1321,31 @@ void Adafruit_GFX::charBounds(char c, int16_t *x, int16_t *y,
 
             uint8_t first = pgm_read_byte(&gfxFont->first),
                     last  = pgm_read_byte(&gfxFont->last);
+
             if((c >= first) && (c <= last)) { // Char present in this font?
 
                 GFXglyph *glyph = pgm_read_glyph_ptr(gfxFont, c - first);
+
                 uint8_t gw = pgm_read_byte(&glyph->width),
                         gh = pgm_read_byte(&glyph->height),
                         xa = pgm_read_byte(&glyph->xAdvance);
+
                 int8_t  xo = pgm_read_byte(&glyph->xOffset),
                         yo = pgm_read_byte(&glyph->yOffset);
 
-                if(wrap && _cursor_bound_w && ((*x+(((int16_t)xo+gw)*textsize_x)) > _cursor_bound_w)) {
+                if(wrap && _cursor_bound_w && ((*x+(((int16_t)xo+gw)*textsize_x)) > _cursor_bound_w + _cursor_offset_x)) {
 
                     *x  = _cursor_offset_x; // Reset x to zero, advance y by one line
                     *y += textsize_y * (uint8_t)pgm_read_byte(&gfxFont->yAdvance);
                 }
+
                 int16_t tsx = (int16_t)textsize_x,
                         tsy = (int16_t)textsize_y,
                         x1 = *x + xo * tsx,
                         y1 = *y + yo * tsy,
                         x2 = x1 + gw * tsx - 1,
                         y2 = y1 + gh * tsy - 1;
+
                 if(x1 < *minx) *minx = x1;
                 if(y1 < *miny) *miny = y1;
                 if(x2 > *maxx) *maxx = x2;
@@ -1369,13 +1376,17 @@ void Adafruit_GFX::getTextBounds(const char *str, int16_t x, int16_t y,
     *y1 = y;
     *w  = *h = 0;
 
-    int16_t minx = _cursor_bound_w?_cursor_bound_w:32767,
-    		miny = _cursor_bound_h?_cursor_bound_h:32767,
+    int16_t minx = _cursor_bound_w + _cursor_offset_x,
+    		miny = _cursor_bound_h + _cursor_offset_y,
 			maxx = -1,
 			maxy = -1;
 
-    while((c = *str++))
+    while((c = *str++)) {
+
         charBounds(c, &x, &y, &minx, &miny, &maxx, &maxy);
+
+    }
+
 
     if(maxx >= minx) {
         *x1 = minx;

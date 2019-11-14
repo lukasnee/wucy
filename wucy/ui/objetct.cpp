@@ -233,6 +233,9 @@ void OptionList::resetList(){
  * */
 int8_t OptionList::addOption(position_t pos, opt_id_t id, const std::string title, void (*callback)(void * p)){
 
+	/* todo adding new options with higher pos than previous,
+	 * doesnt push away them down the list, need to do some kind of neighbour update... */
+
 	auto newOpt = new Option(id, title, callback);
 
 	/* continue if successfully allocated memory for option structure member. */
