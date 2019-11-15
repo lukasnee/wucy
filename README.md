@@ -15,7 +15,7 @@ I'm still learning how github works, I'm an amateur hacker, DM me if you think y
 
 ### Progress
 
-[My documnetation](https://github.com/therram/wucy/blob/master/wucy/documentation/documentation.md)
+[My documentation](https://github.com/therram/wucy/blob/master/wucy/documentation/documentation.md)
 
 ### Hardware
 
