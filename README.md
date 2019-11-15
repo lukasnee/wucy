@@ -64,4 +64,4 @@ Take everything with a grain of salt, I'm an inexperienced engineer, still a stu
 Some of my work inspirations: 
 Unexpected maker, Steve Wozniak, Linus Torvalds, Mohit Bhoite, Werner Herzog.
 
-[More info in wiki](https://github.com/therram/thera/wiki).
+[More info in wiki](https://github.com/therram/thera/wiki)
