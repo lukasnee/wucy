@@ -55,7 +55,7 @@ Hardware licensing will come into consideration later, currently I don't have an
 
 ### Progress
 
-link to documnetation
+[My documnetation](https://github.com/therram/wucy/wucy/documentation).
 
 ### Extra
 
