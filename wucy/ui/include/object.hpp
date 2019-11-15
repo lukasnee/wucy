@@ -79,6 +79,13 @@ public:
 		_title.assign(title);
 	}
 
+
+	~Option() {
+
+
+
+	}
+
 };
 
 

@@ -209,11 +209,11 @@ int8_t OptionList::hideOption(opt_id_t id, option_hide_e state)
 
 
 
-void OptionList::resetList(){
+void OptionList::resetList() {
 
-	for(auto optCur = _optVec.end(); optCur != _optVec.begin(); --optCur) {
+	for(auto optCur = _optVec.begin(); optCur != _optVec.end(); ++optCur) {
 
-		delete *optCur;
+		delete (*optCur);
 
 	}
 

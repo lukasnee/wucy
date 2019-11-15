@@ -27,6 +27,21 @@
 	along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+void ui_close_cb(void * p) {
+
+
+	Button_PreventHold(&ROTEN_OK);
+
+	mf.removeWindow(menu);
+
+	delete menu;
+
+	menu = NULL;
+
+
+}
+
+
 
 
 void ui_balls_cb(void * p) {
@@ -39,18 +54,18 @@ void ui_balls_cb(void * p) {
 
 	if(toggle) {
 
-		menu.hideOption(OPT_DU);
-		menu.hideOption(OPT_TRYS);
-		menu.hideOption(OPT_KETURI);
-		menu.setOptionTitle(OPT_VIENAS, "balls >");
+		menu->hideOption(OPT_DU);
+		menu->hideOption(OPT_TRYS);
+		menu->hideOption(OPT_KETURI);
+		menu->setOptionTitle(OPT_VIENAS, "balls >");
 
 	}
 	else {
 
-		menu.hideOption(OPT_DU, HIDE_FALSE);
-		menu.hideOption(OPT_TRYS, HIDE_FALSE);
-		menu.hideOption(OPT_KETURI, HIDE_FALSE);
-		menu.setOptionTitle(OPT_VIENAS, "balls <");
+		menu->hideOption(OPT_DU, HIDE_FALSE);
+		menu->hideOption(OPT_TRYS, HIDE_FALSE);
+		menu->hideOption(OPT_KETURI, HIDE_FALSE);
+		menu->setOptionTitle(OPT_VIENAS, "balls <");
 
 	}
 

@@ -66,8 +66,6 @@ BouncerBox Bbox(DISP_WIDTH/2, DISP_HEIGHT/2);
 
 #include <object.hpp>
 
-OptionList menu(&wucyFont8pt7b, 20, 20, DISP_WIDTH/2, DISP_HEIGHT/2);
-
 typedef enum {
 
 	OPT_VIENAS,
@@ -93,9 +91,6 @@ void ui_one_ms_timer(void * p);
 
 
 
-#include "ui_menu.hpp"
-
-
 void wucy_ui_Init(void) {
 
 	/* inputs */
@@ -116,28 +111,6 @@ void wucy_ui_Init(void) {
 
 	Bbox.addBouncers(10);
 
-
-	menu.setTitle("menu");
-
-	menu.addOption(1, OPT_ASTUONI, "view fps", ui_view_fps_cb);
-	menu.addOption(4, OPT_PENKI, "fonts", ui_fonts_cb);
-	menu.addOption(5, OPT_SESI, "scroll up", ui_scroll_up_cb);
-	menu.addOption(6, OPT_SEPTYNI, "scroll down", ui_scroll_down_cb);
-
-	menu.addOption(8, OPT_DEVYNI, "...", NULL);
-	menu.addOption(9, OPT_DESIMT, "eol", NULL);
-	menu.addOption(10, OPT_VIENAS, "balls >", ui_balls_cb);
-	menu.addOption(11, OPT_DU, "add 5", ui_add_balls_cb);
-	menu.addOption(12, OPT_TRYS, "remove 5", ui_remove_balls_cb);
-	menu.addOption(13, OPT_KETURI, "clear all", ui_clear_balls_cb);
-
-	menu.hideOption(OPT_DU);
-	menu.hideOption(OPT_TRYS);
-	menu.hideOption(OPT_KETURI);
-
-	menu.showSelectMark();
-	mf.addWindow(&menu, 5, 0, 0);
-
 	xTaskCreate(ui_one_ms_timer, "ui_tim_1", 3*1024, NULL, WUCY_PRIOR_HIGHEST - 3, NULL);
 
 	mf.framingStart(0);
@@ -148,11 +121,15 @@ void wucy_ui_Init(void) {
 
 
 
+OptionList * menu = NULL;
+
+#include "ui_menu.hpp"
+
+
+
 
 
 void ui_one_ms_timer(void * p) {
-
-	uint16_t colorTick = 0, cp = 0;
 
 	while(1) {
 
@@ -160,7 +137,7 @@ void ui_one_ms_timer(void * p) {
 
 		Button_TimeBaseRoutine();
 
-		menu.checkControl();
+
 
 		switch(ROTEN.getDirection()) {
 
@@ -175,6 +152,44 @@ void ui_one_ms_timer(void * p) {
 			Bbox.addBouncers(1);
 			break;
 		}
+
+		if(menu != NULL) {
+
+			menu->checkControl();
+
+		}
+		else if(Button_IsHeld(&ROTEN_OK, 500, 0, BTN_PRIOR_2)) {
+
+			Button_PreventHold(&ROTEN_OK);
+
+			menu = new OptionList(&wucyFont8pt7b, 20, 20, DISP_WIDTH/2, DISP_HEIGHT/2);
+
+			if(menu != NULL) {
+
+				menu->setTitle("menu");
+
+				menu->addOption(1, OPT_DEVYNI, "...", ui_close_cb);
+
+				menu->addOption(2, OPT_ASTUONI, "view fps", ui_view_fps_cb);
+				menu->addOption(3, OPT_PENKI, "fonts", ui_fonts_cb);
+				menu->addOption(4, OPT_SESI, "scroll up", ui_scroll_up_cb);
+				menu->addOption(5, OPT_SEPTYNI, "scroll down", ui_scroll_down_cb);
+				menu->addOption(9, OPT_DESIMT, "eol", NULL);
+				menu->addOption(10, OPT_VIENAS, "balls >", ui_balls_cb);
+				menu->addOption(11, OPT_DU, "add 5", ui_add_balls_cb);
+				menu->addOption(12, OPT_TRYS, "remove 5", ui_remove_balls_cb);
+				menu->addOption(13, OPT_KETURI, "clear all", ui_clear_balls_cb);
+
+				menu->hideOption(OPT_DU);
+				menu->hideOption(OPT_TRYS);
+				menu->hideOption(OPT_KETURI);
+
+				menu->showSelectMark();
+				mf.addWindow(menu, 5, 0, 0);
+
+			}
+		}
+
 
 		vTaskDelay(1 + 0 / portTICK_PERIOD_MS);
 
