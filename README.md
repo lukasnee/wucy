@@ -11,7 +11,11 @@ is to create open source retro watch from scratch. I want to create hardware & s
 Technically you could call this an open source smartwatch, but I don't like the word "smart", in fact - computers are dumb, they do only what's told as long as they're open. So I decided to keep it that way. 
 
 Currently I am working on this alone, but I encourage you to join.  
-I'm still learning how github works, I'm an amateur hacker, DM me if you think you can help. About the progress down at the bottom.
+I'm still learning how github works, I'm an amateur hacker, DM me if you think you can help. 
+
+### Progress
+
+[My documnetation](https://github.com/therram/wucy/blob/master/wucy/documentation/documentation.md)
 
 ### Hardware
 
@@ -52,10 +56,6 @@ All of my contribution will be under open hardware and open software licenses. I
 I want this project to be purely open source. World is too corrupt already so believe it is important to license my work under copy-left GPL-3.0. 
 
 Hardware licensing will come into consideration later, currently I don't have any decent documentation to publish.
-
-### Progress
-
-[My documnetation](https://github.com/therram/wucy/wucy/documentation/documentation.md)
 
 ### Extra
 
