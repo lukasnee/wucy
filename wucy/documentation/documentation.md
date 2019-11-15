@@ -1,6 +1,4 @@
 
-[Link to readme](https://github.com/therram/wucy).
-
 ### Progress
 
 * 2019-09-28 
