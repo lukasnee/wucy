@@ -42,7 +42,7 @@ If there will be a demand, I might consider making wucy's DIY kits or prebuild h
 Custom kernel wrapped in FreeRTOS with neat GUI, easy access to system hardware IO, external file storage etc. I want great flexibility on power usage and computing performance. I want to make an API framework for easy application developement within the kernel and on top of the system. I want this wearable to be fast and efficient. Currently developing on ESP-IDF framework, I think ESP32 is a great SoC to start on, however I do think about portability, so I structure my code accordingly.  
 
 Figure 1. Current plan for system structure. Modular operating system.
-![Current plan for system structure. Modular operating system.](./wucy-code-structure.png)
+![Current plan for system structure. Modular operating system.](./wucy/_documentation/diag/wucy-code-structure.png)
 
 ### Future ideas
 
