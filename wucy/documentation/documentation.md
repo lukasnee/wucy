@@ -16,10 +16,13 @@ Windows framework working - window managing, layering, rendering on screen. Need
 
 * 2019-11-14 Created documentation folder, added some pictures (below).
 
+Fig. 1. Top view of my developement board.
 ![Top view of my developement board.](./IMG_20191114_204348.jpg)
 
+Fig. 2. Side view of my developement board.
 ![Side view of my developement board.](./IMG_20191114_204412.jpg)
 
+Fig. 3. SSD1351 display close-up, GUI testing.
 ![SSD1351 display close-up, GUI testing.](./IMG_20191114_204546.jpg)
 
 
