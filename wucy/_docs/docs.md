@@ -22,4 +22,3 @@ Windows framework working - window managing, layering, rendering on screen. Need
 
 ![SSD1351 display close-up, GUI testing.](./IMG_20191114_204546.jpg)
 
-
