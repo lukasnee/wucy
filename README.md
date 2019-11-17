@@ -13,7 +13,7 @@ Technically you could call this an open source smartwatch, but I don't like the 
 Currently I am working on this alone, but I encourage you to join.  
 I'm still learning how github works, I'm an amateur hacker, DM me if you think you can help. 
 
-### [Progress documentation with pictures](https://github.com/therram/wucy/blob/master/wucy/documentation/documentation.md)
+### [Progress documentation with pictures](./wucy/_documentation)
 
 ### Hardware
 
